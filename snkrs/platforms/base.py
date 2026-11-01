@@ -24,7 +24,7 @@ class BaseMarketplace(ABC):
         size_eu: float,
         condition: ConditionGrade,
         box_condition: BoxCondition,
-        currency: str = "EUR",
+        currency: str = "USD",
         stockx_override: Optional[float] = None
     ) -> PlatformSummary:
         """

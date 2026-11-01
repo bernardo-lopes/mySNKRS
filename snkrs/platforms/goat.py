@@ -24,10 +24,10 @@ class GoatMarketplace(BaseMarketplace):
     Total average seller fee is ~13-14%.
     """
 
-    name = "GOAT"
+    name = "GOAT (US)"
     platform_id = "goat"
     seller_fee_percent = 12.4  # 9.5% commission + 2.9% cash out
-    seller_fixed_fee = 4.50    # ~$5 / €4.50 cash out flat fee
+    seller_fixed_fee = 5.00    # $5.00 cash out fee in US
 
     async def fetch_summary(
         self,
@@ -37,7 +37,7 @@ class GoatMarketplace(BaseMarketplace):
         size_eu: float,
         condition: ConditionGrade,
         box_condition: BoxCondition,
-        currency: str = "EUR",
+        currency: str = "USD",
         stockx_override: Optional[float] = None
     ) -> PlatformSummary:
         clean_sku = sku.strip().upper()

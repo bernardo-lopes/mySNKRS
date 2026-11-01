@@ -61,7 +61,7 @@ async def evaluate_sneaker(
     condition: str = Form(ConditionGrade.DEADSTOCK.value),
     box_condition: str = Form(BoxCondition.ORIGINAL_GOOD.value),
     model_name: Optional[str] = Form(None),
-    currency: str = Form("EUR"),
+    currency: str = Form("USD"),
     stockx_price: Optional[float] = Form(None)
 ):
     """Processes sneaker estimation across StockX, GOAT, eBay, and Vinted."""

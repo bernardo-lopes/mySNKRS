@@ -36,7 +36,7 @@ class MarketplaceAggregator:
         size_eu: float,
         condition: ConditionGrade,
         box_condition: BoxCondition,
-        currency: str = "EUR",
+        currency: str = "USD",
         stockx_override: Optional[float] = None
     ) -> Dict[str, PlatformSummary]:
         """Runs concurrent queries against all marketplaces."""

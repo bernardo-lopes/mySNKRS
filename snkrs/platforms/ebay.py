@@ -23,10 +23,10 @@ class EbayMarketplace(BaseMarketplace):
     - 13.25% for sneakers selling below $150 / €150 + €0.35 fixed insertion/order fee
     """
 
-    name = "eBay"
+    name = "eBay (US)"
     platform_id = "ebay"
-    seller_fee_percent = 10.0  # weighted average
-    seller_fixed_fee = 0.35
+    seller_fee_percent = 8.0   # 8.0% for sneakers $150+ with Authenticity Guarantee (13.25% under $150)
+    seller_fixed_fee = 0.30    # $0.30 fixed fee in US
 
     async def fetch_summary(
         self,
@@ -36,7 +36,7 @@ class EbayMarketplace(BaseMarketplace):
         size_eu: float,
         condition: ConditionGrade,
         box_condition: BoxCondition,
-        currency: str = "EUR",
+        currency: str = "USD",
         stockx_override: Optional[float] = None
     ) -> PlatformSummary:
         clean_sku = sku.strip().upper()
@@ -81,7 +81,7 @@ class EbayMarketplace(BaseMarketplace):
             seller_fee_percentage=fee_pct,
             seller_fixed_fee=self.seller_fixed_fee,
             estimated_net_payout=net_payout,
-            notes=f"eBay Authenticity Guarantee applies to items over €100-150 (8% fee). Below €150, fee is ~13.25%."
+            notes="eBay US Authenticity Guarantee applies to sneakers over $150 (8% seller fee). Under $150, fee is 13.25% + $0.30."
         )
 
     async def _scrape_ebay_sold(self, query: str, currency: str) -> List[MarketListing]:

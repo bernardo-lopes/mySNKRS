@@ -43,21 +43,21 @@ def cli():
     default=BoxCondition.ORIGINAL_GOOD.value,
     help="Box condition (original_good, original_damaged, no_box, etc.)"
 )
-@click.option("--currency", default="EUR", help="Currency (EUR, USD, GBP)")
+@click.option("--currency", default="USD", help="Currency (USD, EUR, GBP)")
 def estimate(sku: str, model: str, size: str, condition: str, box: str, currency: str):
     """Get market price valuation and reselling check across StockX, GOAT, eBay, and Vinted."""
     asyncio.run(_run_estimate(sku, model, size, condition, box, currency))
 
 
 async def _run_estimate(sku: str, model: str, size: str, condition_str: str, box_str: str, currency: str):
-    console.print("\n[bold cyan]👟 Sneaker Market Price Estimation Tool[/bold cyan]")
-    console.print("[dim]Analyzing StockX (Reference), GOAT (Sneakers), eBay (Sold/Active), and Vinted (0% fees)...[/dim]\n")
+    console.print("\n[bold cyan]👟 Sneaker Market Price Estimation Tool (US)[/bold cyan]")
+    console.print("[dim]Analyzing StockX US (Reference), GOAT US, eBay US (Sold/Active), and Vinted US (0% fees)...[/dim]\n")
 
     # Interactive prompts if missing inputs
     if not sku and not model:
-        sku = Prompt.ask("[bold green]Enter Sneaker SKU or Model Reference[/bold green] (e.g. DD1391-100 or DZ5485-612)").strip()
+        sku = Prompt.ask("[bold green]Enter Sneaker SKU or Model Reference[/bold green] (e.g. FD2596-700 or DD1391-100)").strip()
     if not size:
-        size = Prompt.ask("[bold green]Enter Sneaker Size[/bold green] (e.g. US 10, EU 44, UK 9.5)").strip()
+        size = Prompt.ask("[bold green]Enter Sneaker Size[/bold green] (e.g. US 10, US W 11.5, EU 44)").strip()
 
     cond_enum = ConditionGrade(condition_str)
     box_enum = BoxCondition(box_str)
@@ -97,30 +97,30 @@ async def _run_estimate(sku: str, model: str, size: str, condition_str: str, box
     header_text.append(f"SKU: {report.sku} | Size: {size_label}\n", style="cyan")
     header_text.append(f"Condition: {report.condition.value.upper()} | Box: {report.box_condition.value.upper()}\n", style="magenta")
     if report.retail_price:
-        header_text.append(f"Retail Price: €{report.retail_price} | StockX DS Benchmark: €{report.stockx_reference_price}", style="dim")
+        header_text.append(f"Retail Price: ${report.retail_price} | StockX DS Benchmark: ${report.stockx_reference_price}", style="dim")
 
     console.print(Panel(header_text, title="👟 SNEAKER DETAILS", border_style="cyan"))
 
     # 2. Price Strategy Summary Panels
     p_quick = Panel(
-        f"[bold red]€{report.quick_sale_price}[/bold red]\n[dim]Sell in 24-48h\nUndercut ask or hit bids[/dim]",
+        f"[bold red]${report.quick_sale_price}[/bold red]\n[dim]Sell in 24-48h\nUndercut ask or hit bids[/dim]",
         title="⚡ Quick Flip",
         border_style="red"
     )
     p_fair = Panel(
-        f"[bold green]€{report.fair_market_price}[/bold green]\n[dim]Target Sell Price\nOptimal within 1-2 wks[/dim]",
+        f"[bold green]${report.fair_market_price}[/bold green]\n[dim]Target Sell Price\nOptimal within 1-2 wks[/dim]",
         title="🎯 Fair Market",
         border_style="green"
     )
     p_patient = Panel(
-        f"[bold blue]€{report.patient_sale_price}[/bold blue]\n[dim]Collector Value\nFor patient sellers[/dim]",
+        f"[bold blue]${report.patient_sale_price}[/bold blue]\n[dim]Collector Value\nFor patient sellers[/dim]",
         title="💎 Maximum Value",
         border_style="blue"
     )
     console.print(Columns([p_quick, p_fair, p_patient], equal=True))
 
     # 3. Marketplace Comparison Table
-    table = Table(title="📊 MARKETPLACE PRICE & NET TAKE-HOME BREAKDOWN", header_style="bold magenta")
+    table = Table(title="📊 MARKETPLACE PRICE & NET TAKE-HOME BREAKDOWN (USD)", header_style="bold magenta")
     table.add_column("Marketplace", style="bold white", width=14)
     table.add_column("Condition Focus", style="dim", width=16)
     table.add_column("Lowest Ask", justify="right", width=12)
@@ -131,9 +131,9 @@ async def _run_estimate(sku: str, model: str, size: str, condition_str: str, box
     for pid, pdata in report.platforms.items():
         if not pdata:
             continue
-        ask_str = f"€{pdata.lowest_ask}" if pdata.lowest_ask else "N/A"
-        fee_str = f"{pdata.seller_fee_percentage}% + €{pdata.seller_fixed_fee}" if pdata.seller_fee_percentage > 0 else "0% (Free!)"
-        payout_str = f"€{pdata.estimated_net_payout}" if pdata.estimated_net_payout else "N/A"
+        ask_str = f"${pdata.lowest_ask}" if pdata.lowest_ask else "N/A"
+        fee_str = f"{pdata.seller_fee_percentage}% + ${pdata.seller_fixed_fee}" if pdata.seller_fee_percentage > 0 else "0% (Free!)"
+        payout_str = f"${pdata.estimated_net_payout}" if pdata.estimated_net_payout else "N/A"
         
         focus = {
             "stockx": "Deadstock Only",
@@ -181,8 +181,8 @@ def popular():
         table.add_row(
             sku,
             item["title"],
-            f"€{item['retail_price']}",
-            f"€{item['base_stockx_ds']}"
+            f"${item['retail_price']}",
+            f"${item['base_stockx_ds']}"
         )
     console.print(table)
 
@@ -212,7 +212,7 @@ def history():
             r["model_name"][:25] if r["model_name"] else "-",
             r["size_input"],
             r["condition"],
-            f"€{r['fair_market_price']}",
+            f"${r['fair_market_price']}",
             r["best_platform"]
         )
     console.print(table)

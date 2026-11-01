@@ -38,7 +38,7 @@ class MarketListing(BaseModel):
     platform: str                        # stockx, goat, ebay, vinted
     title: str
     price: float                         # Price in currency
-    currency: str = "EUR"
+    currency: str = "USD"
     size: str
     condition: str
     listing_type: str = "active"         # "active" (for sale) or "sold" (transaction)
@@ -58,7 +58,7 @@ class PlatformSummary(BaseModel):
     error_message: Optional[str] = None
     
     # Pricing metrics
-    currency: str = "EUR"
+    currency: str = "USD"
     lowest_ask: Optional[float] = None   # Current cheapest available
     highest_bid: Optional[float] = None  # Instant payout if sold now
     last_sale_price: Optional[float] = None
@@ -85,7 +85,7 @@ class ValuationReport(BaseModel):
     normalized_size_eu: float
     condition: ConditionGrade
     box_condition: BoxCondition
-    currency: str = "EUR"
+    currency: str = "USD"
     image_url: Optional[str] = None
     retail_price: Optional[float] = None
 

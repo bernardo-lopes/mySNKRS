@@ -20,7 +20,7 @@ class VintedMarketplace(BaseMarketplace):
     Zero seller fees — the buyer pays the Buyer Protection fee!
     """
 
-    name = "Vinted"
+    name = "Vinted (US)"
     platform_id = "vinted"
     seller_fee_percent = 0.0  # ZERO seller fee!
     seller_fixed_fee = 0.0
@@ -48,7 +48,7 @@ class VintedMarketplace(BaseMarketplace):
         size_eu: float,
         condition: ConditionGrade,
         box_condition: BoxCondition,
-        currency: str = "EUR",
+        currency: str = "USD",
         stockx_override: Optional[float] = None
     ) -> PlatformSummary:
         clean_sku = sku.strip().upper()

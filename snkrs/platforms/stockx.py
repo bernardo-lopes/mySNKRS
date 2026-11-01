@@ -115,11 +115,11 @@ CATALOG_BENCHMARKS: Dict[str, Dict[str, Any]] = {
     "FD2596-700": {
         "title": "Air Jordan 1 Retro High OG Reverse Laney (Women's)",
         "brand": "Jordan",
-        "retail_price": 165.0, # $180 USD
-        "base_stockx_ds": 97.0,  # $105 USD lowest ask
-        "lowest_ask": 97.0,
-        "highest_bid": 90.0,
-        "last_sale": 95.0,     # $103 USD average sale
+        "retail_price": 180.0,
+        "base_stockx_ds": 105.0,  # $105 USD lowest ask
+        "lowest_ask": 105.0,
+        "highest_bid": 95.0,
+        "last_sale": 103.0,     # $103 USD average sale
         "image_url": "https://images.stockx.com/images/Air-Jordan-1-Retro-High-OG-Reverse-Laney-W-Product.jpg",
         "url": "https://stockx.com/air-jordan-1-retro-high-og-reverse-laney-w",
     }
@@ -128,15 +128,15 @@ CATALOG_BENCHMARKS: Dict[str, Dict[str, Any]] = {
 
 class StockXMarketplace(BaseMarketplace):
     """
-    StockX Provider.
+    StockX Provider (US Instance).
     Primary reference point for Deadstock prices.
-    Fee Structure:
+    Fee Structure (US):
     - 9.0% Transaction Fee (Level 1 seller default, drops to 7.0% for high volume)
     - 3.0% Payment Processing Fee
-    Total seller fee is ~12.0%.
+    Total seller fee is 12.0%.
     """
 
-    name = "StockX"
+    name = "StockX (US)"
     platform_id = "stockx"
     seller_fee_percent = 12.0  # 9% commission + 3% payment processing
     seller_fixed_fee = 0.0
@@ -149,7 +149,7 @@ class StockXMarketplace(BaseMarketplace):
         size_eu: float,
         condition: ConditionGrade,
         box_condition: BoxCondition,
-        currency: str = "EUR",
+        currency: str = "USD",
         stockx_override: Optional[float] = None
     ) -> PlatformSummary:
         clean_sku = sku.strip().upper()
@@ -263,10 +263,10 @@ class StockXMarketplace(BaseMarketplace):
         net_payout = self.calculate_net_payout(lowest_ask)
 
         note_by_source = {
-            "user_override": f"Exact benchmark set by you (€{lowest_ask}). StockX fee is 12% (~€{round(lowest_ask - net_payout, 2)}).",
-            "catalog": "Verified StockX benchmark from market catalog data. Highest Bid allows instant cash-out.",
-            "live": "Live StockX data. StockX accepts ONLY Deadstock in original box.",
-            "fallback": "⚠️ Automated StockX API was blocked by Cloudflare; using €150 baseline. Enter your live StockX ask above to adjust!"
+            "user_override": f"Exact benchmark set by you (${lowest_ask}). StockX fee is 12% (~${round(lowest_ask - net_payout, 2)}).",
+            "catalog": "Verified StockX US benchmark from market catalog data. Highest Bid allows instant cash-out.",
+            "live": "Live StockX US data. StockX accepts ONLY Deadstock in original box.",
+            "fallback": "⚠️ Automated StockX API was blocked by Cloudflare; using $150 baseline. Enter your live StockX ask above to adjust!"
         }
 
         return PlatformSummary(

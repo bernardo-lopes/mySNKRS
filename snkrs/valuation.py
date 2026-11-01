@@ -43,7 +43,7 @@ class SneakerValuationEngine:
         box_condition: BoxCondition,
         platforms_data: Dict[str, PlatformSummary],
         model_name: Optional[str] = None,
-        currency: str = "EUR",
+        currency: str = "USD",
     ) -> ValuationReport:
         clean_sku = sku.strip().upper()
         norm_size = SizeConverter.normalize(size_input)
@@ -202,18 +202,18 @@ class SneakerValuationEngine:
 
             if vinted_payout >= ebay_payout and vinted_payout >= goat_payout:
                 return (
-                    "Vinted",
-                    "StockX does not accept used or damaged-box sneakers. Vinted gives you 100% of your selling price with 0% seller fees, maximizing your cash payout."
+                    "Vinted (US)",
+                    "StockX does not accept used or damaged-box sneakers. Vinted US gives you 100% of your selling price with 0% seller fees, maximizing your cash payout."
                 )
             elif goat_payout >= ebay_payout:
                 return (
-                    "GOAT",
+                    "GOAT (US)",
                     "StockX rejects pre-owned sneakers. GOAT has the highest-trust dedicated Used sneaker market with verified buyers."
                 )
             else:
                 return (
-                    "eBay",
-                    "StockX rejects pre-owned sneakers. eBay gives you global reach and sneaker Authenticity Guarantee for peace of mind."
+                    "eBay (US)",
+                    "StockX rejects pre-owned sneakers. eBay gives you massive US reach and sneaker Authenticity Guarantee for peace of mind."
                 )
 
         # For Deadstock sneakers:
@@ -224,18 +224,18 @@ class SneakerValuationEngine:
 
         if vinted_net > stockx_net + 15:
             return (
-                "Vinted",
-                f"Although StockX is popular, Vinted charges 0% seller commission compared to StockX's ~12% fee, earning you ~{round(vinted_net - stockx_net, 2)} EUR more net profit!"
+                "Vinted (US)",
+                f"Although StockX is popular, Vinted US charges 0% seller commission compared to StockX's ~12% fee, earning you ~${round(vinted_net - stockx_net, 2)} more net profit!"
             )
         elif stockx_bid and stockx_bid >= fair_market * 0.92:
             return (
-                "StockX",
-                f"High instant bid available ({stockx_bid} EUR)! You can sell immediately with zero messaging or negotiation hassle."
+                "StockX (US)",
+                f"High instant bid available (${stockx_bid})! You can sell immediately with zero messaging or negotiation hassle."
             )
         else:
             return (
-                "StockX",
-                "Deadstock condition commands the highest price floor and fastest turnover on StockX."
+                "StockX (US)",
+                "Deadstock condition commands the highest price floor and fastest turnover on StockX US."
             )
 
     @staticmethod
@@ -257,7 +257,7 @@ class SneakerValuationEngine:
             s_net = stockx_summary.estimated_net_payout or 0
             if v_net > s_net:
                 diff = round(v_net - s_net, 2)
-                insights.append(f"💰 **Fee Advantage**: Selling on Vinted pockets ~{diff} EUR more than StockX due to Vinted's 0% seller fee structure.")
+                insights.append(f"💰 **Fee Advantage**: Selling on Vinted US pockets ~${diff} more than StockX due to Vinted's 0% seller fee structure.")
 
         # Box penalty insight
         if box_condition == BoxCondition.NO_BOX:
@@ -273,6 +273,6 @@ class SneakerValuationEngine:
 
         # Fast cash option
         if stockx_summary and stockx_summary.highest_bid:
-            insights.append(f"⚡ **Instant Cash Out**: StockX currently has active buyer bids ready to buy immediately at €{stockx_summary.highest_bid}.")
+            insights.append(f"⚡ **Instant Cash Out**: StockX currently has active buyer bids ready to buy immediately at ${stockx_summary.highest_bid}.")
 
         return insights

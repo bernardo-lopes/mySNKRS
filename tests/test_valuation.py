@@ -27,12 +27,13 @@ def test_deadstock_valuation():
         condition=ConditionGrade.DEADSTOCK,
         box_condition=BoxCondition.ORIGINAL_GOOD,
         platforms_data=platforms,
-        currency="EUR"
+        currency="USD"
     )
 
     assert report.stockx_reference_price == 130.0
     assert report.condition_multiplier == 1.00
     assert report.box_multiplier == 1.00
+    assert report.currency == "USD"
     assert report.fair_market_price > 0
     assert report.quick_sale_price < report.fair_market_price
     assert report.patient_sale_price > report.fair_market_price
@@ -69,7 +70,7 @@ def test_used_sneaker_depreciation_and_best_platform():
         condition=ConditionGrade.USED_GOOD,
         box_condition=BoxCondition.NO_BOX,
         platforms_data=platforms,
-        currency="EUR"
+        currency="USD"
     )
 
     # Condition multiplier for used_good should be 0.70
@@ -78,4 +79,4 @@ def test_used_sneaker_depreciation_and_best_platform():
     assert report.box_multiplier == 0.80
     
     # StockX does not accept used/no-box shoes, so best platform should NOT be StockX
-    assert report.best_platform_to_sell in ["Vinted", "GOAT", "eBay"]
+    assert any(name in report.best_platform_to_sell for name in ["Vinted", "GOAT", "eBay"])

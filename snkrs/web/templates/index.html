@@ -60,7 +60,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-4 text-sm">
-                <span class="text-gray-400 hidden md:inline">Currency: <strong class="text-white">EUR (€)</strong></span>
+                <span class="text-gray-400 hidden md:inline">Market & Currency: <strong class="text-white">US Market (USD $)</strong></span>
                 <a href="#quick-presets" class="text-xs bg-dark-700 hover:bg-dark-600 text-gray-200 px-3 py-1.5 rounded-lg border border-dark-600 transition">
                     Popular Drops
                 </a>
@@ -145,7 +145,7 @@
                     <div>
                         <div class="flex items-center justify-between mb-2">
                             <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
-                                StockX Ask (€ / $) <span class="text-gray-500 font-normal">(Optional)</span>
+                                StockX Ask ($ USD) <span class="text-gray-500 font-normal">(Optional)</span>
                             </label>
                             <span class="text-[10px] text-emerald-400 font-mono">Live Anchor</span>
                         </div>
@@ -301,9 +301,9 @@
                 </div>
 
                 <div class="text-right flex flex-col items-end border-t md:border-t-0 md:border-l border-dark-700 pt-4 md:pt-0 md:pl-6 w-full md:w-auto">
-                    <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">StockX DS Benchmark</span>
-                    <span id="stockxRefPrice" class="text-2xl font-display font-bold text-emerald-400">€125</span>
-                    <span class="text-xs text-gray-500">Retail: <span id="retailPrice">€115</span></span>
+                    <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">StockX US DS Benchmark</span>
+                    <span id="stockxRefPrice" class="text-2xl font-display font-bold text-emerald-400">$125</span>
+                    <span class="text-xs text-gray-500">Retail: <span id="retailPrice">$115</span></span>
                 </div>
             </div>
 
@@ -315,7 +315,7 @@
                         <span>⚡ Quick Flip (24-48h)</span>
                         <span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">Fast Cash</span>
                     </div>
-                    <div id="quickSalePrice" class="text-4xl font-display font-black text-white mt-1">€110</div>
+                    <div id="quickSalePrice" class="text-4xl font-display font-black text-white mt-1">$110</div>
                     <p class="text-xs text-gray-400 mt-2">
                         Undercuts the lowest current ask by 8-10% or hits StockX/GOAT highest instant bid for immediate liquidation.
                     </p>
@@ -327,13 +327,13 @@
                         <span>🎯 Fair Market Target</span>
                         <span class="px-2 py-0.5 rounded bg-volt/20 text-volt border border-volt/30">Recommended</span>
                     </div>
-                    <div id="fairMarketPrice" class="text-4xl font-display font-black text-volt mt-1">€125</div>
+                    <div id="fairMarketPrice" class="text-4xl font-display font-black text-volt mt-1">$125</div>
                     <p class="text-xs text-gray-300 mt-2">
                         The sweet spot balancing fast turnaround (1-2 weeks) with full market equity.
                     </p>
                     <div class="mt-3 text-xs text-gray-400 pt-3 border-t border-dark-700 flex justify-between">
                         <span>Expected Range:</span>
-                        <span id="marketRange" class="font-mono text-white font-bold">€115 - €138</span>
+                        <span id="marketRange" class="font-mono text-white font-bold">$115 - $138</span>
                     </div>
                 </div>
 
@@ -343,7 +343,7 @@
                         <span>💎 Top Dollar (Patient)</span>
                         <span class="px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">Max Return</span>
                     </div>
-                    <div id="patientSalePrice" class="text-4xl font-display font-black text-white mt-1">€140</div>
+                    <div id="patientSalePrice" class="text-4xl font-display font-black text-white mt-1">$140</div>
                     <p class="text-xs text-gray-400 mt-2">
                         Targeting top-tier buyers or waiting for next market demand surge (3-6+ weeks).
                     </p>
@@ -357,14 +357,14 @@
                         <span class="text-lg">🏆</span>
                         <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 font-mono">Recommended Platform to Sell</span>
                     </div>
-                    <h3 id="bestPlatformTitle" class="text-2xl font-display font-bold text-white">Sell on Vinted</h3>
+                    <h3 id="bestPlatformTitle" class="text-2xl font-display font-bold text-white">Sell on Vinted (US)</h3>
                     <p id="bestPlatformReason" class="text-sm text-gray-300 max-w-2xl">
-                        Vinted charges 0% seller commission compared to StockX's ~12% fee, earning you €15 more in your pocket.
+                        Vinted charges 0% seller commission compared to StockX's ~12% fee, earning you more in your pocket.
                     </p>
                 </div>
                 <div class="text-right sm:text-right flex-shrink-0">
                     <span class="text-xs text-gray-400 uppercase tracking-wider block">Estimated Net Take-Home</span>
-                    <span id="bestPlatformPayout" class="text-3xl font-display font-extrabold text-volt">€125.00</span>
+                    <span id="bestPlatformPayout" class="text-3xl font-display font-extrabold text-volt">$125.00</span>
                 </div>
             </div>
 
@@ -419,7 +419,7 @@
                         <div class="text-xs text-gray-400">{{ r.size_input }} • {{ r.condition }}</div>
                     </div>
                     <div class="text-right">
-                        <div class="text-base font-display font-bold text-white">€{{ r.fair_market_price }}</div>
+                        <div class="text-base font-display font-bold text-white">${{ r.fair_market_price }}</div>
                         <div class="text-xs text-emerald-400">via {{ r.best_platform }}</div>
                     </div>
                 </div>
@@ -528,8 +528,8 @@
             document.getElementById('conditionBadge').textContent = data.condition.replace('_', ' ').toUpperCase();
             document.getElementById('boxBadge').textContent = data.box_condition.replace('_', ' ').toUpperCase();
             
-            document.getElementById('stockxRefPrice').textContent = data.stockx_reference_price ? `€${data.stockx_reference_price}` : 'N/A';
-            document.getElementById('retailPrice').textContent = data.retail_price ? `€${data.retail_price}` : 'N/A';
+            document.getElementById('stockxRefPrice').textContent = data.stockx_reference_price ? `$${data.stockx_reference_price}` : 'N/A';
+            document.getElementById('retailPrice').textContent = data.retail_price ? `$${data.retail_price}` : 'N/A';
 
             // Image
             const img = document.getElementById('sneakerImg');
@@ -544,10 +544,10 @@
             }
 
             // Price targets
-            document.getElementById('quickSalePrice').textContent = `€${data.quick_sale_price}`;
-            document.getElementById('fairMarketPrice').textContent = `€${data.fair_market_price}`;
-            document.getElementById('patientSalePrice').textContent = `€${data.patient_sale_price}`;
-            document.getElementById('marketRange').textContent = `€${data.estimated_range_min} - €${data.estimated_range_max}`;
+            document.getElementById('quickSalePrice').textContent = `$${data.quick_sale_price}`;
+            document.getElementById('fairMarketPrice').textContent = `$${data.fair_market_price}`;
+            document.getElementById('patientSalePrice').textContent = `$${data.patient_sale_price}`;
+            document.getElementById('marketRange').textContent = `$${data.estimated_range_min} - $${data.estimated_range_max}`;
 
             // Best platform
             document.getElementById('bestPlatformTitle').textContent = `Sell on ${data.best_platform_to_sell}`;
@@ -555,24 +555,24 @@
             
             const bestPlatformData = data.platforms[data.best_platform_to_sell.toLowerCase()];
             const payout = bestPlatformData ? bestPlatformData.estimated_net_payout : data.fair_market_price;
-            document.getElementById('bestPlatformPayout').textContent = `€${payout}`;
+            document.getElementById('bestPlatformPayout').textContent = `$${payout}`;
 
             // Table
             const tbody = document.getElementById('platformsTableBody');
             tbody.innerHTML = '';
 
             const platformBadges = {
-                stockx: { name: 'StockX', badge: 'bg-emerald-900/60 text-emerald-300 border-emerald-700', url: `https://stockx.com/search?s=${encodeURIComponent(data.sku)}` },
-                goat: { name: 'GOAT', badge: 'bg-zinc-800 text-gray-200 border-zinc-700', url: `https://www.goat.com/search?query=${encodeURIComponent(data.sku)}` },
-                ebay: { name: 'eBay', badge: 'bg-red-950/60 text-red-300 border-red-800', url: `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(data.sku)}&LH_BIN=1` },
-                vinted: { name: 'Vinted', badge: 'bg-teal-950/60 text-teal-300 border-teal-800', url: `https://www.vinted.com/catalog?search_text=${encodeURIComponent(data.sku)}` },
+                stockx: { name: 'StockX (US)', badge: 'bg-emerald-900/60 text-emerald-300 border-emerald-700', url: `https://stockx.com/search?s=${encodeURIComponent(data.sku)}` },
+                goat: { name: 'GOAT (US)', badge: 'bg-zinc-800 text-gray-200 border-zinc-700', url: `https://www.goat.com/search?query=${encodeURIComponent(data.sku)}` },
+                ebay: { name: 'eBay (US)', badge: 'bg-red-950/60 text-red-300 border-red-800', url: `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(data.sku)}&LH_BIN=1` },
+                vinted: { name: 'Vinted (US)', badge: 'bg-teal-950/60 text-teal-300 border-teal-800', url: `https://www.vinted.com/catalog?search_text=${encodeURIComponent(data.sku)}` },
             };
 
             for (const [pid, p] of Object.entries(data.platforms)) {
                 if (!p) continue;
                 const info = platformBadges[pid] || { name: p.platform_name, badge: 'bg-dark-700 text-gray-200', url: '#' };
-                const feeText = p.seller_fee_percentage > 0 ? `${p.seller_fee_percentage}% + €${p.seller_fixed_fee}` : '<span class="text-volt font-bold">0% (Free!)</span>';
-                const bidText = p.highest_bid ? `Bid: €${p.highest_bid}` : (p.last_sale_price ? `Sold: €${p.last_sale_price}` : '-');
+                const feeText = p.seller_fee_percentage > 0 ? `${p.seller_fee_percentage}% + $${p.seller_fixed_fee}` : '<span class="text-volt font-bold">0% (Free!)</span>';
+                const bidText = p.highest_bid ? `Bid: $${p.highest_bid}` : (p.last_sale_price ? `Sold: $${p.last_sale_price}` : '-');
 
                 let sourceBadge = '';
                 if (pid === 'stockx') {
@@ -595,10 +595,10 @@
                         </div>
                         ${p.notes ? `<div class="text-[11px] text-gray-400 font-normal font-sans mt-1 max-w-xs">${p.notes}</div>` : ''}
                     </td>
-                    <td class="py-4 text-white">€${p.lowest_ask || '-'}</td>
+                    <td class="py-4 text-white">$${p.lowest_ask || '-'}</td>
                     <td class="py-4 text-gray-400">${bidText}</td>
                     <td class="py-4 text-gray-300 font-sans">${feeText}</td>
-                    <td class="py-4 text-right text-base font-bold text-volt">€${p.estimated_net_payout || '-'}</td>
+                    <td class="py-4 text-right text-base font-bold text-volt">$${p.estimated_net_payout || '-'}</td>
                     <td class="py-4 text-center font-sans">
                         <a href="${info.url}" target="_blank" rel="noopener noreferrer" class="text-xs px-3 py-1.5 rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-300 hover:text-white border border-dark-600 transition inline-flex items-center gap-1">
                             <span>View</span>
