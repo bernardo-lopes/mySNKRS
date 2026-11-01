@@ -35,9 +35,18 @@ def size_key(label: str) -> Optional[str]:
     num = m.group(1).rstrip("0").rstrip(".") if "." in m.group(1) else m.group(1)
     if "EU" in raw or "UK" in raw or "CM" in raw or "KR" in raw:
         return None
+    if re.match(r"^US\s?(?:M\b|MEN'?S)", raw):  # unisex: "US Men's 10 / Fits Women's 11"
+        return "M" + num
     women = bool(re.search(r"US\s?W\b|WOMEN|\d(?:\.\d+)?\s?W\b", raw))
     youth = bool(re.search(r"\d(?:\.\d+)?\s?Y\b|US\s?Y\b|GS\b", raw))
     return ("W" if women else "Y" if youth else "M") + num
+
+
+def size_aliases(label: str) -> List[str]:
+    """Every size key a label covers. Unisex pairs read "US Men's 10 / Fits Women's 11", and StockX
+    lists their sales under the women's size, so both "M10" and "W11" mean the same pair."""
+    keys = [size_key(part) for part in label.split("/")]
+    return [k for k in keys if k]
 
 
 def _money(s: str) -> float:

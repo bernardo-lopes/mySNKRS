@@ -125,3 +125,10 @@ def test_unsynced_size_has_no_made_up_prices():
 def test_sync_rejects_page_without_data():
     r = TestClient(app).post("/api/stockx/sync", json={"text": "hello", "title": TITLE})
     assert r.status_code == 400
+
+
+def test_unisex_size_label_maps_to_mens_and_its_sales():
+    from snkrs.stockx_sync import size_aliases, size_key
+    assert size_key("US Men's 10 / Fits Women's 11") == "M10"
+    assert size_aliases("US Men's 10 / Fits Women's 11") == ["M10", "W11"]
+    assert size_key("US W 11") == "W11"

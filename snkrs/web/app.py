@@ -16,7 +16,7 @@ from ..platforms.aggregator import MarketplaceAggregator
 from ..platforms.stockx import CATALOG_BENCHMARKS
 from ..valuation import SneakerValuationEngine
 from ..storage import SneakerStorage
-from ..stockx_sync import parse_stockx_page, size_key
+from ..stockx_sync import parse_stockx_page, size_aliases, size_key
 from ..stockx_history import RANGE_DAYS, summarize_sales
 from ..inventory import value_inventory
 
@@ -132,10 +132,11 @@ async def stockx_sync(payload: StockXSyncPayload):
     if not sku:
         raise HTTPException(400, "Could not find the style code (SKU) on this page.")
 
-    sales = [dict(s, size_key=size_key(s["size"])) for s in parsed["sales"]]
-    sales = [s for s in sales if s["size_key"]]
-    market = None
     page_key = size_key(parsed["size"]) if parsed["size"] else None
+    same_pair = size_aliases(parsed["size"]) if parsed["size"] else []
+    sales = [dict(s, size_key=size_key(s["size"])) for s in parsed["sales"]]
+    sales = [dict(s, size_key=page_key) if s["size_key"] in same_pair else s for s in sales if s["size_key"]]
+    market = None
     if page_key and (parsed["highest_bid"] or parsed["lowest_ask"]):
         market = {
             "size_key": page_key,
