@@ -37,7 +37,11 @@
 
     <header class="border-b border-ink-700">
         <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-            <span class="font-bold tracking-tight text-white">SNKRS</span>
+            <div class="flex items-center gap-6 text-sm">
+                <a href="/" class="font-bold tracking-tight text-white">SNKRS</a>
+                <a href="/" class="text-white font-medium">Check value</a>
+                <a href="/inventory" class="text-gray-400 hover:text-white">Inventory</a>
+            </div>
             <div class="flex items-center gap-3 text-xs text-gray-400">
                 <span class="hidden sm:inline">StockX · GOAT · eBay · Vinted</span>
                 <a id="syncBookmark" href="#" title="Drag to your bookmarks bar"
@@ -94,10 +98,11 @@
                     <img id="sneakerImg" alt="" class="w-full h-full object-contain hidden">
                     <span id="sneakerImgFallback" class="text-2xl">👟</span>
                 </div>
-                <div class="min-w-0">
+                <div class="min-w-0 flex-1">
                     <h1 id="sneakerTitle" class="text-lg font-semibold text-white truncate"></h1>
                     <div id="sneakerMeta" class="text-sm text-gray-400 font-mono"></div>
                 </div>
+                <a id="addToInventory" href="/inventory" class="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg border border-ink-600 text-gray-200 hover:bg-ink-700">+ Add to inventory</a>
             </div>
 
             <!-- StockX -->
@@ -252,6 +257,11 @@
             const sx = data.platforms.stockx || {};
             $('sneakerTitle').textContent = data.model_name;
             $('sneakerMeta').textContent = `${data.sku} · ${sx.size_label || $('sizeInput').value}`;
+            const form = $('valuationForm').elements;
+            $('addToInventory').href = '/inventory?' + new URLSearchParams({
+                add: 1, sku: data.sku, model_name: data.model_name, size: form.size.value,
+                condition: form.condition.value, box_condition: form.box_condition.value,
+            });
             const img = $('sneakerImg');
             if (data.image_url) { img.src = data.image_url; img.classList.remove('hidden'); $('sneakerImgFallback').classList.add('hidden'); }
             else { img.classList.add('hidden'); $('sneakerImgFallback').classList.remove('hidden'); }

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <meta name="darkreader-lock">
+    <title>SNKRS • Inventory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { ink: { 900: '#0B0C10', 800: '#15171E', 700: '#1E212A', 600: '#2A2E3A', 500: '#3A3F4D' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root { color-scheme: dark; }
+        body { background-color: #0B0C10; color: #E5E7EB; }
+        .field { width: 100%; background: #0B0C10; border: 1px solid #2A2E3A; border-radius: 10px; padding: 9px 12px; font-size: 14px; color: #F3F4F6; }
+        .field:focus { outline: none; border-color: #6B7280; }
+        .tnum { font-variant-numeric: tabular-nums; }
+        .chip { font-size: 11px; padding: 2px 8px; border-radius: 9999px; white-space: nowrap; }
+        .tab { padding: 6px 14px; border-radius: 9999px; background: #1E212A; color: #D1D5DB; font-size: 13px; font-weight: 500; }
+        .tab.active { background: #F3F4F6; color: #0B0C10; }
+        .paid { width: 80px; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px; text-align: right; color: #F3F4F6; }
+        .paid:hover, .paid:focus { border-color: #2A2E3A; outline: none; }
+    </style>
+</head>
+<body class="min-h-screen font-sans">
+
+    <header class="border-b border-ink-700">
+        <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-6 text-sm">
+                <a href="/" class="font-bold tracking-tight text-white">SNKRS</a>
+                <a href="/" class="text-gray-400 hover:text-white">Check value</a>
+                <a href="/inventory" class="text-white font-medium">Inventory</a>
+            </div>
+            <button id="addToggle" class="text-xs px-3 py-1.5 rounded-lg bg-white text-black font-semibold hover:bg-gray-200">+ Add pair</button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+
+        <!-- Add pair -->
+        <form id="addForm" class="hidden bg-ink-800 border border-ink-700 rounded-2xl p-5 grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
+            <label class="text-xs text-gray-400 space-y-1"><span>Style code</span><input name="sku" required placeholder="FD2596-700" class="field font-mono uppercase"></label>
+            <label class="col-span-2 md:col-span-2 text-xs text-gray-400 space-y-1"><span>Name</span><input name="model_name" placeholder="Jordan 1 High Reverse Laney" class="field"></label>
+            <label class="text-xs text-gray-400 space-y-1"><span>Size</span><input name="size" required placeholder="US W 11.5" class="field"></label>
+            <label class="text-xs text-gray-400 space-y-1"><span>Condition</span>
+                <select name="condition" class="field">
+                    <option value="deadstock">DS</option>
+                    <option value="vnds">Not DS</option>
+                    <option value="used_like_new">Used · like new</option>
+                    <option value="used_good">Used</option>
+                    <option value="used_fair">Used · fair</option>
+                    <option value="used_beat">Beat</option>
+                </select>
+            </label>
+            <label class="text-xs text-gray-400 space-y-1"><span>Box</span>
+                <select name="box_condition" class="field">
+                    <option value="original_good">Original</option>
+                    <option value="original_damaged">Damaged</option>
+                    <option value="replacement">Not original</option>
+                    <option value="no_box">No box</option>
+                </select>
+            </label>
+            <label class="text-xs text-gray-400 space-y-1"><span>Paid ($)</span><input name="purchase_price" type="number" step="0.01" min="0" placeholder="optional" class="field"></label>
+            <div class="col-span-2 md:col-span-5 flex justify-end gap-2">
+                <button type="button" id="addCancel" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-ink-700">Cancel</button>
+                <button type="submit" class="px-4 py-2 rounded-lg text-sm bg-white text-black font-semibold hover:bg-gray-200">Add to inventory</button>
+            </div>
+        </form>
+
+        <!-- Totals -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="rounded-xl bg-ink-800 border border-ink-700 p-4">
+                <div class="text-xs text-gray-400">Pairs</div>
+                <div id="tPairs" class="text-2xl font-bold text-white tnum mt-1">–</div>
+                <div id="tPairsSub" class="text-xs text-gray-500 mt-1"></div>
+            </div>
+            <div class="rounded-xl bg-ink-800 border border-ink-700 p-4">
+                <div class="text-xs text-gray-400">Net if sold now on StockX</div>
+                <div id="tNet" class="text-2xl font-bold text-white tnum mt-1">–</div>
+                <div id="tNetSub" class="text-xs text-gray-500 mt-1"></div>
+            </div>
+            <div class="rounded-xl bg-ink-800 border border-ink-700 p-4">
+                <div class="text-xs text-gray-400">Paid</div>
+                <div id="tPaid" class="text-2xl font-bold text-white tnum mt-1">–</div>
+                <div class="text-xs text-gray-500 mt-1">Click a price in the list to edit it</div>
+            </div>
+            <div class="rounded-xl bg-ink-800 border border-ink-700 p-4">
+                <div class="text-xs text-gray-400">Profit if sold now</div>
+                <div id="tProfit" class="text-2xl font-bold tnum mt-1">–</div>
+                <div class="text-xs text-gray-500 mt-1">Priced pairs with a purchase price</div>
+            </div>
+        </section>
+
+        <!-- List -->
+        <section class="bg-ink-800 border border-ink-700 rounded-2xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-ink-700">
+                <div class="flex gap-2">
+                    <button class="tab active" data-status="for_sale">In stock</button>
+                    <button class="tab" data-status="sold">Sold</button>
+                </div>
+                <input id="search" placeholder="Search name, style code or size" class="field max-w-xs">
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm tnum">
+                    <thead class="text-xs text-gray-400">
+                        <tr class="border-b border-ink-700">
+                            <th class="text-left font-medium py-2 pl-4">Sneaker</th>
+                            <th class="text-left font-medium">Size</th>
+                            <th class="text-left font-medium">Condition</th>
+                            <th class="text-right font-medium">Paid</th>
+                            <th class="text-right font-medium">Bid</th>
+                            <th class="text-right font-medium">Last sale</th>
+                            <th class="text-right font-medium">Net now</th>
+                            <th class="text-right font-medium">Profit</th>
+                            <th class="text-left font-medium pl-4">StockX data</th>
+                            <th class="pr-4"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="rows" class="divide-y divide-ink-700"></tbody>
+                </table>
+            </div>
+            <p class="p-4 text-xs text-gray-500 border-t border-ink-700">
+                Prices come from your StockX syncs. To price a pair: open it on StockX (↗), pick its size, open Market Data › Sales, click the ⇅ SNKRS sync bookmark, then reload this page.
+                Net now is the highest bid minus 9% + 3% + $5 shipping, shown only for DS pairs in their original box, since StockX doesn't accept anything else.
+            </p>
+        </section>
+    </main>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        const usd = (v) => v == null ? '–' : (v < 0 ? '−' : '') + '$' + Math.abs(Number(v)).toLocaleString('en-US', { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 });
+        const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        const fmtDate = (s) => s ? new Date(s.includes('T') ? s : s.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+
+        const COND = { deadstock: ['DS', 'bg-emerald-500/15 text-emerald-300'], vnds: ['Not DS', 'bg-amber-500/15 text-amber-300'] };
+        const condChip = (c) => { const [t, cls] = COND[c] || ['Used', 'bg-rose-500/15 text-rose-300']; return `<span class="chip ${cls}">${t}</span>`; };
+        const BOX = { original_damaged: 'Damaged box', replacement: 'Not original box', no_box: 'No box' };
+
+        let status = 'for_sale', data = { items: [], totals: {} };
+
+        async function load() {
+            data = await (await fetch('/api/inventory?status=' + status)).json();
+            render();
+        }
+
+        function render() {
+            const t = data.totals;
+            $('tPairs').textContent = t.pairs;
+            $('tPairsSub').textContent = `${t.synced} synced · ${t.stockx_eligible} DS in original box`;
+            $('tNet').textContent = usd(t.net_payout_now);
+            $('tNetSub').textContent = `${t.priced} of ${t.stockx_eligible} StockX-eligible pairs priced`;
+            $('tPaid').textContent = usd(t.paid);
+            $('tProfit').textContent = usd(t.profit_now);
+            $('tProfit').className = 'text-2xl font-bold tnum mt-1 ' + (t.profit_now > 0 ? 'text-emerald-300' : t.profit_now < 0 ? 'text-rose-300' : 'text-white');
+
+            const q = $('search').value.trim().toLowerCase();
+            const items = data.items
+                .filter(i => !q || `${i.title} ${i.sku} ${i.size}`.toLowerCase().includes(q))
+                .sort((a, b) => (b.net_payout_now ?? -1) - (a.net_payout_now ?? -1) || (b.synced - a.synced));
+
+            $('rows').innerHTML = items.map(i => `
+                <tr data-id="${i.id}">
+                    <td class="py-3 pl-4">
+                        <div class="flex items-center gap-3 min-w-[240px]">
+                            <div class="w-11 h-11 rounded-lg bg-white flex-shrink-0 overflow-hidden flex items-center justify-center">
+                                ${i.image_url ? `<img src="${esc(i.image_url)}" alt="" class="w-full h-full object-contain">` : '<span>👟</span>'}
+                            </div>
+                            <div class="min-w-0">
+                                <a href="/?sku=${encodeURIComponent(i.sku)}&size=${encodeURIComponent(i.size)}" class="block text-white font-medium truncate max-w-[280px] hover:underline" title="${esc(i.title)}">${esc(i.title)}</a>
+                                <div class="text-xs text-gray-500 font-mono">${esc(i.sku)}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="whitespace-nowrap">${esc(i.size)}</td>
+                    <td><div class="flex flex-col items-start gap-1">${condChip(i.condition)}${BOX[i.box_condition] ? `<span class="chip bg-ink-700 text-gray-300">${BOX[i.box_condition]}</span>` : ''}</div></td>
+                    <td class="text-right"><input class="paid tnum" type="number" step="0.01" min="0" placeholder="–" value="${i.purchase_price ?? ''}" aria-label="Purchase price"></td>
+                    <td class="text-right">${usd(i.highest_bid)}</td>
+                    <td class="text-right">${usd(i.last_sale)}${i.last_sale_date ? `<div class="text-[11px] text-gray-500">${fmtDate(i.last_sale_date)}</div>` : ''}</td>
+                    <td class="text-right font-semibold text-white">${i.net_payout_now != null ? usd(i.net_payout_now) : (i.synced && !i.stockx_eligible ? '<span class="text-xs font-normal text-gray-500">Not on StockX</span>' : '–')}</td>
+                    <td class="text-right ${i.profit_now > 0 ? 'text-emerald-300' : i.profit_now < 0 ? 'text-rose-300' : ''}">${usd(i.profit_now)}</td>
+                    <td class="pl-4 whitespace-nowrap text-xs">
+                        ${i.synced ? `<span class="text-gray-300">Synced ${fmtDate(i.synced_at)}</span>` : '<span class="text-gray-500">Not synced</span>'}
+                        <a href="${esc(i.stockx_url)}" target="_blank" rel="noopener noreferrer" class="ml-1 text-gray-400 hover:text-white">↗</a>
+                    </td>
+                    <td class="pr-4 text-right whitespace-nowrap text-xs">
+                        ${status === 'for_sale'
+                            ? `<button class="act-sold text-gray-400 hover:text-white">Sold</button>`
+                            : `<span class="text-gray-400">${usd(i.sold_price)}${i.sold_platform ? ' · ' + esc(i.sold_platform) : ''}</span> <button class="act-unsold ml-2 text-gray-400 hover:text-white">Undo</button>`}
+                        <button class="act-del ml-3 text-gray-500 hover:text-rose-300">Remove</button>
+                    </td>
+                </tr>`).join('') || `<tr><td colspan="10" class="py-10 text-center text-gray-500">${status === 'sold' ? 'No sold pairs yet' : 'No pairs yet. Use + Add pair.'}</td></tr>`;
+        }
+
+        const patch = (id, body) => fetch('/api/inventory/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+        $('rows').addEventListener('change', async (e) => {
+            if (!e.target.classList.contains('paid')) return;
+            const id = e.target.closest('tr').dataset.id;
+            const v = e.target.value === '' ? null : Number(e.target.value);
+            await patch(id, { purchase_price: v });
+            load();
+        });
+
+        $('rows').addEventListener('click', async (e) => {
+            const row = e.target.closest('tr'); if (!row) return;
+            const id = row.dataset.id;
+            const item = data.items.find(i => String(i.id) === id);
+            if (e.target.classList.contains('act-sold')) {
+                const price = prompt(`Sold "${item.title}" for how much ($)?`, item.net_payout_now ?? '');
+                if (price === null) return;
+                const platform = prompt('Where did it sell?', 'StockX');
+                await patch(id, { status: 'sold', sold_price: price === '' ? null : Number(price), sold_platform: platform || null });
+                load();
+            } else if (e.target.classList.contains('act-unsold')) {
+                await patch(id, { status: 'for_sale' });
+                load();
+            } else if (e.target.classList.contains('act-del')) {
+                if (!confirm(`Remove "${item.title}" (${item.size}) from your inventory?`)) return;
+                await fetch('/api/inventory/' + id, { method: 'DELETE' });
+                load();
+            }
+        });
+
+        document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+            status = t.dataset.status;
+            document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+            load();
+        }));
+        $('search').addEventListener('input', render);
+
+        const toggleAdd = (show) => $('addForm').classList.toggle('hidden', !show);
+        $('addToggle').addEventListener('click', () => toggleAdd($('addForm').classList.contains('hidden')));
+        $('addCancel').addEventListener('click', () => toggleAdd(false));
+        $('addForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const f = Object.fromEntries(new FormData(e.target));
+            f.purchase_price = f.purchase_price === '' ? null : Number(f.purchase_price);
+            if (!f.model_name) delete f.model_name;
+            const res = await fetch('/api/inventory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f) });
+            if (!res.ok) { alert('Could not add: ' + ((await res.json()).detail || res.status)); return; }
+            e.target.reset(); toggleAdd(false); load();
+        });
+
+        // Prefill from "Add to inventory" on the value page
+        const params = new URLSearchParams(location.search);
+        if (params.get('add')) {
+            const form = $('addForm');
+            for (const k of ['sku', 'model_name', 'size', 'condition', 'box_condition']) if (params.get(k)) form.elements[k].value = params.get(k);
+            toggleAdd(true);
+        }
+        load();
+    </script>
+</body>
+</html>

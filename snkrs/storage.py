@@ -140,8 +140,8 @@ class SneakerStorage:
         size: str,
         condition: str,
         box_condition: str,
-        purchase_price: float,
-        target_price: float,
+        purchase_price: Optional[float] = None,
+        target_price: Optional[float] = None,
         notes: str = ""
     ) -> int:
         with sqlite3.connect(self.db_path) as conn:
@@ -151,16 +151,44 @@ class SneakerStorage:
                     sku, model_name, size, condition, box_condition,
                     purchase_price, target_price, notes
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (sku, model_name, size, condition, box_condition, purchase_price, target_price, notes))
+            """, (sku.strip().upper(), model_name, size, condition, box_condition, purchase_price, target_price, notes))
             conn.commit()
             return cursor.lastrowid
 
-    def get_inventory(self) -> List[Dict[str, Any]]:
+    def get_inventory(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM inventory ORDER BY created_at DESC")
+            if status:
+                cursor.execute("SELECT * FROM inventory WHERE status = ? ORDER BY created_at DESC, id DESC", (status,))
+            else:
+                cursor.execute("SELECT * FROM inventory ORDER BY created_at DESC, id DESC")
             return [dict(row) for row in cursor.fetchall()]
+
+    INVENTORY_EDITABLE = (
+        "sku", "model_name", "size", "condition", "box_condition",
+        "purchase_price", "target_price", "status", "sold_price", "sold_platform", "notes",
+    )
+
+    def update_inventory_item(self, item_id: int, fields: Dict[str, Any]) -> bool:
+        fields = {k: v for k, v in fields.items() if k in self.INVENTORY_EDITABLE}
+        if "sku" in fields and fields["sku"]:
+            fields["sku"] = fields["sku"].strip().upper()
+        if not fields:
+            return False
+        with sqlite3.connect(self.db_path) as conn:
+            cur = conn.execute(
+                f"UPDATE inventory SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ?",
+                (*fields.values(), item_id),
+            )
+            conn.commit()
+            return cur.rowcount > 0
+
+    def delete_inventory_item(self, item_id: int) -> bool:
+        with sqlite3.connect(self.db_path) as conn:
+            cur = conn.execute("DELETE FROM inventory WHERE id = ?", (item_id,))
+            conn.commit()
+            return cur.rowcount > 0
 
     def save_stockx_sync(
         self,

@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from ..models import ConditionGrade, BoxCondition
 from ..size_converter import SizeConverter
@@ -18,6 +18,7 @@ from ..valuation import SneakerValuationEngine
 from ..storage import SneakerStorage
 from ..stockx_sync import parse_stockx_page, size_key
 from ..stockx_history import RANGE_DAYS, summarize_sales
+from ..inventory import value_inventory
 
 app = FastAPI(title="SNKRS - Sneaker Market Price Valuation")
 
@@ -44,6 +45,12 @@ async def index(request: Request):
         name="index.html",
         context={"popular_catalog": CATALOG_BENCHMARKS},
     )
+
+
+@app.get("/inventory", response_class=HTMLResponse)
+async def inventory_page(request: Request):
+    """Pairs you own, with their current StockX value."""
+    return templates.TemplateResponse(request=request, name="inventory.html", context={})
 
 
 @app.get("/sync", response_class=HTMLResponse)
@@ -165,3 +172,61 @@ async def stockx_history(
     result["oldest_sale"] = sales[-1]["date"] if sales else None
     result["sales_on_file"] = len(sales)
     return result
+
+
+class InventoryItemIn(BaseModel):
+    sku: str
+    size: str
+    model_name: Optional[str] = None
+    condition: ConditionGrade = ConditionGrade.DEADSTOCK
+    box_condition: BoxCondition = BoxCondition.ORIGINAL_GOOD
+    purchase_price: Optional[float] = None
+    notes: str = ""
+
+
+class InventoryItemUpdate(BaseModel):
+    sku: Optional[str] = None
+    size: Optional[str] = None
+    model_name: Optional[str] = None
+    condition: Optional[ConditionGrade] = None
+    box_condition: Optional[BoxCondition] = None
+    purchase_price: Optional[float] = None
+    status: Optional[Literal["for_sale", "sold"]] = None
+    sold_price: Optional[float] = None
+    sold_platform: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@app.get("/api/inventory")
+async def list_inventory(status: str = Query("for_sale", pattern="^(for_sale|sold)$")):
+    """Inventory with each pair's current StockX bid, ask, last sale and sell-now net payout."""
+    return value_inventory(storage, aggregator.platforms["stockx"], status)
+
+
+@app.post("/api/inventory")
+async def add_inventory_item(item: InventoryItemIn):
+    item_id = storage.add_to_inventory(
+        sku=item.sku,
+        model_name=item.model_name or item.sku.upper(),
+        size=item.size,
+        condition=item.condition.value,
+        box_condition=item.box_condition.value,
+        purchase_price=item.purchase_price,
+        notes=item.notes,
+    )
+    return {"id": item_id}
+
+
+@app.patch("/api/inventory/{item_id}")
+async def update_inventory_item(item_id: int, update: InventoryItemUpdate):
+    fields = update.model_dump(exclude_unset=True, mode="json")
+    if not storage.update_inventory_item(item_id, fields):
+        raise HTTPException(404, "Inventory item not found or nothing to update.")
+    return {"ok": True}
+
+
+@app.delete("/api/inventory/{item_id}")
+async def delete_inventory_item(item_id: int):
+    if not storage.delete_inventory_item(item_id):
+        raise HTTPException(404, "Inventory item not found.")
+    return {"ok": True}
