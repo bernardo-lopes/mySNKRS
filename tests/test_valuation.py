@@ -30,7 +30,7 @@ def test_deadstock_valuation():
         currency="EUR"
     )
 
-    assert report.stockx_reference_price == 125.0
+    assert report.stockx_reference_price == 130.0
     assert report.condition_multiplier == 1.00
     assert report.box_multiplier == 1.00
     assert report.fair_market_price > 0

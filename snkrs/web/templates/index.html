@@ -90,23 +90,28 @@
             <div class="absolute -top-24 -right-24 w-60 h-60 bg-volt/5 rounded-full blur-3xl pointer-events-none"></div>
 
             <form id="valuationForm" class="space-y-6">
-                <!-- Top Row: SKU & Model Name -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="md:col-span-1">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
-                            Model Code / SKU <span class="text-volt">*</span>
-                        </label>
+                <!-- Top Row: SKU, Model Name, Size, StockX Price -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                                Model Code / SKU <span class="text-volt">*</span>
+                            </label>
+                            <a id="stockxDirectLink" href="https://stockx.com" target="_blank" rel="noopener noreferrer" class="text-[10px] text-volt hover:underline flex items-center gap-1 font-mono">
+                                <span>Check StockX ↗</span>
+                            </a>
+                        </div>
                         <input
                             type="text"
                             id="skuInput"
                             name="sku"
                             required
-                            placeholder="e.g. DD1391-100, DZ5485-612"
+                            placeholder="e.g. FD2596-700, DD1391-100"
                             class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-volt transition font-mono uppercase text-sm"
                         >
                     </div>
 
-                    <div class="md:col-span-1">
+                    <div>
                         <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
                             Sneaker Model Name <span class="text-gray-500 font-normal">(Optional)</span>
                         </label>
@@ -114,12 +119,12 @@
                             type="text"
                             id="modelNameInput"
                             name="model_name"
-                            placeholder="e.g. Nike Dunk Low Retro Panda"
+                            placeholder="e.g. Jordan 1 Retro High Reverse Laney"
                             class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-volt transition text-sm"
                         >
                     </div>
 
-                    <div class="md:col-span-1">
+                    <div>
                         <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
                             Size <span class="text-volt">*</span>
                         </label>
@@ -129,12 +134,29 @@
                                 id="sizeInput"
                                 name="size"
                                 required
-                                placeholder="e.g. EU 44 or US 10 or 10.5"
-                                value="EU 44"
+                                placeholder="e.g. US W 11.5 or EU 44"
+                                value="US W 11.5"
                                 class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-volt transition text-sm font-medium"
                             >
-                            <span class="absolute right-3 top-3 text-xs text-gray-500 font-mono">Auto-converts</span>
+                            <span class="absolute right-3 top-3 text-[10px] text-gray-500 font-mono">Auto-converts</span>
                         </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
+                                StockX Ask (€ / $) <span class="text-gray-500 font-normal">(Optional)</span>
+                            </label>
+                            <span class="text-[10px] text-emerald-400 font-mono">Live Anchor</span>
+                        </div>
+                        <input
+                            type="number"
+                            step="0.5"
+                            id="stockxPriceInput"
+                            name="stockx_price"
+                            placeholder="e.g. 105 (from your browser)"
+                            class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-400 transition font-mono text-sm"
+                        >
                     </div>
                 </div>
 
@@ -439,9 +461,25 @@
             });
         });
 
+        // SKU input auto-updates StockX search link
+        const skuInput = document.getElementById('skuInput');
+        const stockxDirectLink = document.getElementById('stockxDirectLink');
+        skuInput.addEventListener('input', () => {
+            const val = skuInput.value.trim();
+            if (val) {
+                stockxDirectLink.href = `https://stockx.com/search?s=${encodeURIComponent(val)}`;
+                stockxDirectLink.textContent = `Search "${val}" on StockX ↗`;
+            } else {
+                stockxDirectLink.href = 'https://stockx.com';
+                stockxDirectLink.textContent = 'Check StockX ↗';
+            }
+        });
+
         function selectPreset(sku, title) {
             document.getElementById('skuInput').value = sku;
             document.getElementById('modelNameInput').value = title;
+            stockxDirectLink.href = `https://stockx.com/search?s=${encodeURIComponent(sku)}`;
+            stockxDirectLink.textContent = `Search "${sku}" on StockX ↗`;
             document.getElementById('valuationForm').dispatchEvent(new Event('submit'));
         }
 
@@ -536,11 +574,26 @@
                 const feeText = p.seller_fee_percentage > 0 ? `${p.seller_fee_percentage}% + €${p.seller_fixed_fee}` : '<span class="text-volt font-bold">0% (Free!)</span>';
                 const bidText = p.highest_bid ? `Bid: €${p.highest_bid}` : (p.last_sale_price ? `Sold: €${p.last_sale_price}` : '-');
 
+                let sourceBadge = '';
+                if (pid === 'stockx') {
+                    if (p.data_source === 'user_override') {
+                        sourceBadge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono border border-blue-500/30">User Anchor</span>';
+                    } else if (p.data_source === 'catalog') {
+                        sourceBadge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono border border-emerald-500/30">Verified Catalog</span>';
+                    } else {
+                        sourceBadge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono border border-amber-500/30">Bot Protected • Fallback</span>';
+                    }
+                }
+
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-dark-700/50 transition';
                 tr.innerHTML = `
-                    <td class="py-4 pl-2 font-sans font-bold flex items-center gap-2">
-                        <span class="text-xs px-2.5 py-1 rounded-md border font-mono ${info.badge}">${info.name}</span>
+                    <td class="py-4 pl-2 font-sans font-bold">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs px-2.5 py-1 rounded-md border font-mono ${info.badge}">${info.name}</span>
+                            ${sourceBadge}
+                        </div>
+                        ${p.notes ? `<div class="text-[11px] text-gray-400 font-normal font-sans mt-1 max-w-xs">${p.notes}</div>` : ''}
                     </td>
                     <td class="py-4 text-white">€${p.lowest_ask || '-'}</td>
                     <td class="py-4 text-gray-400">${bidText}</td>

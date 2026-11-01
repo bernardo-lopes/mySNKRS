@@ -36,7 +36,8 @@ class EbayMarketplace(BaseMarketplace):
         size_eu: float,
         condition: ConditionGrade,
         box_condition: BoxCondition,
-        currency: str = "EUR"
+        currency: str = "EUR",
+        stockx_override: Optional[float] = None
     ) -> PlatformSummary:
         clean_sku = sku.strip().upper()
         # Search query matching model and size

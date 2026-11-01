@@ -37,7 +37,8 @@ class GoatMarketplace(BaseMarketplace):
         size_eu: float,
         condition: ConditionGrade,
         box_condition: BoxCondition,
-        currency: str = "EUR"
+        currency: str = "EUR",
+        stockx_override: Optional[float] = None
     ) -> PlatformSummary:
         clean_sku = sku.strip().upper()
         query = clean_sku or model_name or ""

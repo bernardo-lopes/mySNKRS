@@ -54,6 +54,7 @@ class PlatformSummary(BaseModel):
     platform_name: str
     platform_id: str                     # stockx, goat, ebay, vinted
     is_live: bool = True
+    data_source: str = "fallback"        # "live", "catalog", "user_override", "fallback"
     error_message: Optional[str] = None
     
     # Pricing metrics

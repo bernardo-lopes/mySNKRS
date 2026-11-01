@@ -24,7 +24,8 @@ class BaseMarketplace(ABC):
         size_eu: float,
         condition: ConditionGrade,
         box_condition: BoxCondition,
-        currency: str = "EUR"
+        currency: str = "EUR",
+        stockx_override: Optional[float] = None
     ) -> PlatformSummary:
         """
         Fetches market listings and summarizes key price metrics for a given sneaker & condition.

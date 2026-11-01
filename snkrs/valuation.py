@@ -58,8 +58,8 @@ class SneakerValuationEngine:
         retail_price = 130.0
         image_url = None
 
-        if stockx and stockx.last_sale_price:
-            stockx_ref_price = stockx.last_sale_price
+        if stockx and (stockx.lowest_ask or stockx.last_sale_price):
+            stockx_ref_price = stockx.lowest_ask or stockx.last_sale_price
         elif clean_sku in CATALOG_BENCHMARKS:
             stockx_ref_price = CATALOG_BENCHMARKS[clean_sku]["base_stockx_ds"]
             resolved_name = CATALOG_BENCHMARKS[clean_sku]["title"]
@@ -73,6 +73,14 @@ class SneakerValuationEngine:
         if clean_sku in CATALOG_BENCHMARKS:
             resolved_name = CATALOG_BENCHMARKS[clean_sku]["title"]
             brand = CATALOG_BENCHMARKS[clean_sku]["brand"]
+            retail_price = CATALOG_BENCHMARKS[clean_sku]["retail_price"]
+            image_url = CATALOG_BENCHMARKS[clean_sku].get("image_url")
+        elif "LANEY" in clean_sku or ("LANEY" in (model_name or "").upper()):
+            item = CATALOG_BENCHMARKS["FD2596-700"]
+            resolved_name = item["title"]
+            brand = item["brand"]
+            retail_price = item["retail_price"]
+            image_url = item.get("image_url")
             retail_price = CATALOG_BENCHMARKS[clean_sku]["retail_price"]
             image_url = CATALOG_BENCHMARKS[clean_sku].get("image_url")
 
