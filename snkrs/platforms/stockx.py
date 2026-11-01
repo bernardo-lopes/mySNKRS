@@ -1,17 +1,18 @@
 """
 StockX Platform Connector.
 StockX is the primary industry reference for Deadstock market value.
+
+StockX blocks automated access, so prices come only from data you sync from your own browser
+(see stockx_sync.py). Nothing is estimated: without a sync, the summary has no prices.
 """
 
 from typing import Optional, Dict, Any, List
-import httpx
-import logging
 from .base import BaseMarketplace
-from ..models import PlatformSummary, MarketListing, ConditionGrade, BoxCondition
+from ..models import PlatformSummary, ConditionGrade, BoxCondition
+from ..size_converter import NIKE_MENS_CHART
+from ..storage import SneakerStorage
 
-logger = logging.getLogger(__name__)
-
-# Curated reference catalog for instant baseline and offline fallback
+# Popular drops for quick presets and the non-StockX valuation baseline (not used for StockX prices)
 CATALOG_BENCHMARKS: Dict[str, Dict[str, Any]] = {
     "DD1391-100": {
         "title": "Nike Dunk Low Retro White Black Panda",
@@ -131,15 +132,63 @@ class StockXMarketplace(BaseMarketplace):
     StockX Provider (US Instance).
     Primary reference point for Deadstock prices.
     Fee Structure (US):
-    - 9.0% Transaction Fee (Level 1 seller default, drops to 7.0% for high volume)
+    - 9.0% Transaction Fee
     - 3.0% Payment Processing Fee
-    Total seller fee is 12.0%.
+    - $5.00 Shipping
+    Net payout is computed on the highest bid (what you get if you sell now).
     """
 
     name = "StockX (US)"
     platform_id = "stockx"
     seller_fee_percent = 12.0  # 9% commission + 3% payment processing
-    seller_fixed_fee = 0.0
+    seller_fixed_fee = 5.0  # shipping
+
+    TRANSACTION_FEE_PERCENT = 9.0
+    PROCESSING_FEE_PERCENT = 3.0
+
+    def __init__(self, storage: Optional[SneakerStorage] = None):
+        self._storage = storage
+
+    @property
+    def storage(self) -> SneakerStorage:
+        if self._storage is None:
+            self._storage = SneakerStorage()
+        return self._storage
+
+    @storage.setter
+    def storage(self, value: SneakerStorage):
+        self._storage = value
+
+    def payout_breakdown(self, price: float) -> Dict[str, float]:
+        """Mirrors StockX's Total Payout breakdown: ask, 9% transaction fee, 3% processing, $5 shipping."""
+        transaction = round(price * self.TRANSACTION_FEE_PERCENT / 100.0, 2)
+        processing = round(price * self.PROCESSING_FEE_PERCENT / 100.0, 2)
+        return {
+            "price": price,
+            "transaction_fee": transaction,
+            "processing_fee": processing,
+            "shipping": self.seller_fixed_fee,
+            "payout": max(0.0, round(price - transaction - processing - self.seller_fixed_fee, 2)),
+        }
+
+    def calculate_net_payout(self, gross_price: float) -> float:
+        if gross_price is None or gross_price <= 0:
+            return 0.0
+        return self.payout_breakdown(gross_price)["payout"]
+
+    @staticmethod
+    def size_key_candidates(size_us: float) -> List[str]:
+        """Men's and women's StockX size keys for a normalized US men's size (a SKU is one or the other)."""
+        row = next((r for r in NIKE_MENS_CHART if r["us_m"] == size_us), None)
+        fmt = lambda v: f"{v:g}"
+        keys = [f"M{fmt(size_us)}"]
+        if row:
+            keys.append(f"W{fmt(row['us_w'])}")
+        return keys
+
+    def resolve_size_key(self, sku: str, size_us: float) -> Optional[str]:
+        synced = set(self.storage.get_stockx_size_keys(sku))
+        return next((k for k in self.size_key_candidates(size_us) if k in synced), None)
 
     async def fetch_summary(
         self,
@@ -150,180 +199,51 @@ class StockXMarketplace(BaseMarketplace):
         condition: ConditionGrade,
         box_condition: BoxCondition,
         currency: str = "USD",
-        stockx_override: Optional[float] = None
+        stockx_override: Optional[float] = None,
+        stockx_last_20_avg: Optional[float] = None,
+        stockx_year_avg: Optional[float] = None
     ) -> PlatformSummary:
         clean_sku = sku.strip().upper()
-        data_source = "catalog"
-        
-        # Check custom override first
-        if stockx_override and stockx_override > 0:
-            data_source = "user_override"
-            lowest_ask = float(stockx_override)
-            highest_bid = round(lowest_ask * 0.90, 2)
-            last_sale = round(lowest_ask * 0.95, 2)
-            title = model_name or f"Sneaker {clean_sku}"
-            benchmark = {
-                "title": title,
-                "brand": "Sneaker",
-                "retail_price": 160.0,
-                "base_stockx_ds": lowest_ask,
-                "lowest_ask": lowest_ask,
-                "highest_bid": highest_bid,
-                "last_sale": last_sale,
-                "url": f"https://stockx.com/search?s={clean_sku or model_name}",
-            }
-        else:
-            # 1. Check known benchmark catalogue
-            benchmark = CATALOG_BENCHMARKS.get(clean_sku)
-            if not benchmark:
-                query_str = f"{clean_sku} {model_name or ''}".lower()
-                for k, item in CATALOG_BENCHMARKS.items():
-                    title_l = item["title"].lower()
-                    url_l = item.get("url", "").lower()
-                    if ("reverse" in query_str and "laney" in query_str) or ("laney" in query_str and "reverse" in title_l):
-                        benchmark = item
-                        break
-                    elif any(word in title_l or word in url_l for word in query_str.split() if len(word) > 3):
-                        benchmark = item
-                        break
+        product = self.storage.get_stockx_product(clean_sku) or {}
+        key = self.resolve_size_key(clean_sku, size_us)
+        market = self.storage.get_stockx_market(clean_sku, key) if key else None
+        sales = self.storage.get_stockx_sales(clean_sku, key) if key else []
 
-            # Attempt live API search if possible
-            if not benchmark:
-                live_data = await self._attempt_live_stockx_search(clean_sku or model_name or "")
-                if live_data:
-                    benchmark = live_data
-                    data_source = "live"
-
-            if not benchmark:
-                # Fallback estimation for unknown SKU
-                data_source = "fallback"
-                title = model_name or f"Sneaker {clean_sku}"
-                base_ds = 150.0  # standard baseline for authentic sneakers
-                benchmark = {
-                    "title": title,
-                    "brand": "Sneakers",
-                    "retail_price": 130.0,
-                    "base_stockx_ds": base_ds,
-                    "lowest_ask": base_ds * 1.05,
-                    "highest_bid": base_ds * 0.92,
-                    "last_sale": base_ds,
-                    "image_url": None,
-                    "url": f"https://stockx.com/search?s={clean_sku or model_name}",
-                }
-
-            # Size adjustment: rare sizes (e.g. US 4-6 or US 13-14) or high-demand sizes (US 9-10.5)
-            size_factor = 1.0
-            if size_us in [9.0, 9.5, 10.0, 10.5]:
-                size_factor = 1.0  # common median
-            elif size_us in [4.0, 4.5, 5.0, 13.0, 14.0]:
-                size_factor = 1.08 # higher rarity premium
-            elif size_us in [7.5, 8.0, 11.5]:
-                size_factor = 0.97
-
-            lowest_ask = round(benchmark["lowest_ask"] * size_factor, 2)
-            highest_bid = round(benchmark["highest_bid"] * size_factor, 2)
-            last_sale = round(benchmark["last_sale"] * size_factor, 2)
-
-        listings: List[MarketListing] = [
-            MarketListing(
-                platform="stockx",
-                title=f"{benchmark['title']} (Lowest Ask)",
-                price=lowest_ask,
-                currency=currency,
-                size=f"US {size_us} / EU {size_eu}",
-                condition="Brand New (Deadstock)",
-                listing_type="active",
-                url=benchmark.get("url"),
-                thumbnail_url=benchmark.get("image_url")
-            ),
-            MarketListing(
-                platform="stockx",
-                title=f"{benchmark['title']} (Highest Instant Bid)",
-                price=highest_bid,
-                currency=currency,
-                size=f"US {size_us} / EU {size_eu}",
-                condition="Brand New (Deadstock)",
-                listing_type="active",
-                url=benchmark.get("url"),
-                thumbnail_url=benchmark.get("image_url")
-            ),
-            MarketListing(
-                platform="stockx",
-                title=f"{benchmark['title']} (Recent Verified Sale)",
-                price=last_sale,
-                currency=currency,
-                size=f"US {size_us} / EU {size_eu}",
-                condition="Brand New (Deadstock)",
-                listing_type="sold",
-                url=benchmark.get("url"),
-                thumbnail_url=benchmark.get("image_url")
-            )
-        ]
-
-        net_payout = self.calculate_net_payout(lowest_ask)
-
-        note_by_source = {
-            "user_override": f"Exact benchmark set by you (${lowest_ask}). StockX fee is 12% (~${round(lowest_ask - net_payout, 2)}).",
-            "catalog": "Verified StockX US benchmark from market catalog data. Highest Bid allows instant cash-out.",
-            "live": "Live StockX US data. StockX accepts ONLY Deadstock in original box.",
-            "fallback": "⚠️ Automated StockX API was blocked by Cloudflare; using $150 baseline. Enter your live StockX ask above to adjust!"
-        }
-
-        return PlatformSummary(
+        summary = PlatformSummary(
             platform_name="StockX",
             platform_id=self.platform_id,
-            is_live=data_source in ["live", "catalog", "user_override"],
-            data_source=data_source,
             currency=currency,
-            lowest_ask=lowest_ask,
-            highest_bid=highest_bid,
-            last_sale_price=last_sale,
-            average_price=round((lowest_ask + last_sale) / 2.0, 2),
-            sample_count=len(listings),
-            listings=listings,
             seller_fee_percentage=self.seller_fee_percent,
             seller_fixed_fee=self.seller_fixed_fee,
-            estimated_net_payout=net_payout,
-            notes=note_by_source.get(data_source)
+            product_title=product.get("title"),
+            image_url=product.get("image_url"),
+            product_url=product.get("url") or f"https://stockx.com/search?s={clean_sku}",
+            size_key=key,
         )
 
-    async def _attempt_live_stockx_search(self, query: str) -> Optional[Dict[str, Any]]:
-        """Attempts to query StockX if network is available and not blocked."""
-        if not query:
-            return None
-        try:
-            # Algolia search endpoint used by StockX web UI
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-                "x-algolia-agent": "Algolia for JavaScript (3.35.1); Browser",
-                "x-algolia-application-id": "XW70GAHIPO",
-                "x-algolia-api-key": "6bfb5abee4d9aa8cf04f961631382743",
-            }
-            url = "https://xw70gahipo-dsn.algolia.net/1/indexes/products/query"
-            payload = {
-                "params": f"query={query}&hitsPerPage=1&facets=*&filters="
-            }
-            async with httpx.AsyncClient(timeout=4.0) as client:
-                res = await client.post(url, json=payload, headers=headers)
-                if res.status_code == 200:
-                    data = res.json()
-                    hits = data.get("hits", [])
-                    if hits:
-                        hit = hits[0]
-                        price = float(hit.get("retail_price") or hit.get("last_sale") or 150.0)
-                        lowest_ask = float(hit.get("lowest_ask") or price * 1.05)
-                        highest_bid = float(hit.get("highest_bid") or price * 0.92)
-                        return {
-                            "title": hit.get("title") or hit.get("shoe_name") or query,
-                            "brand": hit.get("brand") or "Sneakers",
-                            "retail_price": float(hit.get("retail_price") or price),
-                            "base_stockx_ds": price,
-                            "lowest_ask": lowest_ask,
-                            "highest_bid": highest_bid,
-                            "last_sale": float(hit.get("last_sale") or price),
-                            "image_url": hit.get("media", {}).get("imageUrl"),
-                            "url": f"https://stockx.com/{hit.get('urlKey', '')}" if hit.get("urlKey") else None,
-                        }
-        except Exception as e:
-            logger.debug(f"StockX live query error (normal in sandboxed/mock environment): {e}")
-        return None
+        if not market and not sales:
+            summary.is_live = False
+            summary.data_source = "not_synced"
+            summary.notes = "No StockX data for this size yet. Open it on StockX and click the SNKRS sync bookmark."
+            return summary
+
+        summary.is_live = True
+        summary.data_source = "browser_sync"
+        summary.recent_sales = sales
+        summary.sample_count = len(sales)
+        summary.last_sale_price = sales[0]["price"] if sales else None
+        if market:
+            summary.highest_bid = market["highest_bid"]
+            summary.lowest_ask = market["lowest_ask"]
+            summary.size_label = market["size_label"]
+            summary.synced_at = market["synced_at"]
+        elif sales:
+            summary.size_label = sales[0]["size"]
+
+        # Selling now means accepting the highest bid
+        if summary.highest_bid:
+            summary.payout_breakdown = self.payout_breakdown(summary.highest_bid)
+            summary.estimated_net_payout = summary.payout_breakdown["payout"]
+        if summary.lowest_ask:
+            summary.lowest_ask_net_payout = self.calculate_net_payout(summary.lowest_ask)
+        return summary

@@ -59,6 +59,37 @@ class SneakerStorage:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+            # StockX data synced from your own browser (see stockx_sync.py)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS stockx_products (
+                    sku TEXT PRIMARY KEY,
+                    title TEXT,
+                    url TEXT,
+                    image_url TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS stockx_market (
+                    sku TEXT NOT NULL,
+                    size_key TEXT NOT NULL,
+                    size_label TEXT,
+                    highest_bid REAL,
+                    lowest_ask REAL,
+                    synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (sku, size_key)
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS stockx_sales (
+                    sku TEXT NOT NULL,
+                    size_key TEXT NOT NULL,
+                    size_label TEXT,
+                    sold_at TEXT NOT NULL,
+                    price REAL NOT NULL,
+                    UNIQUE (sku, size_key, sold_at, price)
+                )
+            """)
             conn.commit()
 
     def save_evaluation(self, report: ValuationReport) -> int:
@@ -130,3 +161,71 @@ class SneakerStorage:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM inventory ORDER BY created_at DESC")
             return [dict(row) for row in cursor.fetchall()]
+
+    def save_stockx_sync(
+        self,
+        sku: str,
+        title: Optional[str],
+        url: Optional[str],
+        image_url: Optional[str],
+        market: Optional[Dict[str, Any]],
+        sales: List[Dict[str, Any]],
+    ) -> int:
+        """Stores a StockX sync. Sales are merged (deduplicated), so history accumulates across syncs.
+        Returns the number of new sales added."""
+        sku = sku.strip().upper()
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                INSERT INTO stockx_products (sku, title, url, image_url, updated_at)
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(sku) DO UPDATE SET
+                    title = COALESCE(excluded.title, title),
+                    url = COALESCE(excluded.url, url),
+                    image_url = COALESCE(excluded.image_url, image_url),
+                    updated_at = CURRENT_TIMESTAMP
+            """, (sku, title, url, image_url))
+            if market:
+                conn.execute("""
+                    INSERT OR REPLACE INTO stockx_market (sku, size_key, size_label, highest_bid, lowest_ask, synced_at)
+                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """, (sku, market["size_key"], market["size_label"], market["highest_bid"], market["lowest_ask"]))
+            before = conn.total_changes
+            conn.executemany("""
+                INSERT OR IGNORE INTO stockx_sales (sku, size_key, size_label, sold_at, price)
+                VALUES (?, ?, ?, ?, ?)
+            """, [(sku, s["size_key"], s["size"], s["sold_at"], s["price"]) for s in sales])
+            added = conn.total_changes - before
+            conn.commit()
+            return added
+
+    def get_stockx_product(self, sku: str) -> Optional[Dict[str, Any]]:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute("SELECT * FROM stockx_products WHERE sku = ?", (sku.strip().upper(),)).fetchone()
+            return dict(row) if row else None
+
+    def get_stockx_market(self, sku: str, size_key: str) -> Optional[Dict[str, Any]]:
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                "SELECT * FROM stockx_market WHERE sku = ? AND size_key = ?", (sku.strip().upper(), size_key)
+            ).fetchone()
+            return dict(row) if row else None
+
+    def get_stockx_sales(self, sku: str, size_key: str) -> List[Dict[str, Any]]:
+        """All stored sales for a SKU and size, newest first, as {"date", "price", "size"}."""
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute("""
+                SELECT sold_at, price, size_label FROM stockx_sales
+                WHERE sku = ? AND size_key = ? ORDER BY sold_at DESC
+            """, (sku.strip().upper(), size_key)).fetchall()
+            return [{"date": r[0], "price": r[1], "size": r[2]} for r in rows]
+
+    def get_stockx_size_keys(self, sku: str) -> List[str]:
+        """Sizes that have any synced StockX data for this SKU."""
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute("""
+                SELECT size_key FROM stockx_market WHERE sku = ?
+                UNION SELECT DISTINCT size_key FROM stockx_sales WHERE sku = ?
+            """, (sku.strip().upper(), sku.strip().upper())).fetchall()
+            return [r[0] for r in rows]

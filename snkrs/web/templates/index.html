@@ -3,623 +3,389 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNKRS • Sneaker Market Price Valuation & Reselling Intelligence</title>
-    <!-- Tailwind CSS CDN -->
+    <meta name="color-scheme" content="dark">
+    <meta name="darkreader-lock">
+    <title>SNKRS • Sneaker Market Value</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                        display: ['"Space Grotesk"', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        dark: {
-                            900: '#090A0F',
-                            800: '#11131B',
-                            700: '#181C27',
-                            600: '#232838',
-                        },
-                        volt: '#CCFF00',
-                        accent: '#3B82F6',
-                        stockx: '#006340',
-                        goat: '#000000',
-                        vinted: '#09B1BA',
-                        ebay: '#E53238'
+                        ink: { 900: '#0B0C10', 800: '#15171E', 700: '#1E212A', 600: '#2A2E3A', 500: '#3A3F4D' },
+                        up: '#3FA36B',
                     }
                 }
             }
         }
     </script>
     <style>
-        body {
-            background-color: #090A0F;
-            color: #F3F4F6;
-        }
-        .glow-card:hover {
-            box-shadow: 0 0 25px rgba(204, 255, 0, 0.15);
-        }
+        :root { color-scheme: dark; }
+        body { background-color: #0B0C10; color: #E5E7EB; }
+        .pill { padding: 6px 14px; border-radius: 9999px; background: #1E212A; color: #D1D5DB; font-size: 13px; font-weight: 500; }
+        .pill.active { background: #F3F4F6; color: #0B0C10; }
+        .field { width: 100%; background: #0B0C10; border: 1px solid #2A2E3A; border-radius: 10px; padding: 10px 12px; font-size: 14px; color: #F3F4F6; }
+        .field:focus { outline: none; border-color: #6B7280; }
+        .tnum { font-variant-numeric: tabular-nums; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans selection:bg-volt selection:text-black">
+<body class="min-h-screen font-sans">
 
-    <!-- Top Navigation -->
-    <header class="border-b border-dark-700 bg-dark-900/80 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-volt flex items-center justify-center font-display font-extrabold text-black text-xl shadow-lg shadow-volt/20">
-                    S
-                </div>
-                <div>
-                    <span class="font-display font-bold text-xl tracking-tight text-white">SNKRS<span class="text-volt">.VALUATION</span></span>
-                    <span class="hidden sm:inline-block ml-2 text-xs px-2 py-0.5 rounded-full bg-dark-700 text-gray-400 font-mono">StockX • GOAT • eBay • Vinted</span>
-                </div>
-            </div>
-            <div class="flex items-center gap-4 text-sm">
-                <span class="text-gray-400 hidden md:inline">Market & Currency: <strong class="text-white">US Market (USD $)</strong></span>
-                <a href="#quick-presets" class="text-xs bg-dark-700 hover:bg-dark-600 text-gray-200 px-3 py-1.5 rounded-lg border border-dark-600 transition">
-                    Popular Drops
-                </a>
+    <header class="border-b border-ink-700">
+        <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+            <span class="font-bold tracking-tight text-white">SNKRS</span>
+            <div class="flex items-center gap-3 text-xs text-gray-400">
+                <span class="hidden sm:inline">StockX · GOAT · eBay · Vinted</span>
+                <a id="syncBookmark" href="#" title="Drag to your bookmarks bar"
+                   class="px-3 py-1.5 rounded-lg border border-ink-600 text-gray-200 hover:bg-ink-700 cursor-grab">⇅ SNKRS sync</a>
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-10">
+    <main class="max-w-5xl mx-auto px-4 py-6 space-y-6">
 
-        <!-- Hero Title -->
-        <div class="text-center max-w-3xl mx-auto pt-4 space-y-3">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-dark-700/80 border border-dark-600 text-xs font-medium text-gray-300">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                StockX Benchmark & Reselling Profit Engine
-            </div>
-            <h1 class="text-3xl sm:text-5xl font-display font-extrabold tracking-tight text-white">
-                Get Your Sneaker's <span class="text-transparent bg-clip-text bg-gradient-to-r from-volt via-emerald-400 to-accent">Real Market Value</span>
-            </h1>
-            <p class="text-gray-400 text-base sm:text-lg">
-                Enter your model code, size, and condition. We cross-reference <span class="text-white font-medium">StockX</span> (benchmark), <span class="text-white font-medium">GOAT</span>, <span class="text-white font-medium">eBay</span>, and <span class="text-white font-medium">Vinted</span> to calculate your optimal selling price and maximum net take-home cash.
-            </p>
-        </div>
+        <!-- Search -->
+        <form id="valuationForm" class="grid grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] gap-3 items-end">
+            <label class="col-span-2 md:col-span-1 text-xs text-gray-400 space-y-1">
+                <span>Style code</span>
+                <input id="skuInput" name="sku" required list="skuList" placeholder="FD2596-700" class="field font-mono uppercase">
+                <datalist id="skuList">
+                    {% for sku, item in popular_catalog.items() %}<option value="{{ sku }}">{{ item.title }}</option>{% endfor %}
+                </datalist>
+            </label>
+            <label class="text-xs text-gray-400 space-y-1">
+                <span>Size</span>
+                <input id="sizeInput" name="size" required value="US W 11.5" placeholder="US W 11.5 / EU 44" class="field">
+            </label>
+            <label class="text-xs text-gray-400 space-y-1">
+                <span>Condition</span>
+                <select name="condition" class="field">
+                    <option value="deadstock">Deadstock</option>
+                    <option value="vnds">VNDS</option>
+                    <option value="used_like_new">Used · like new</option>
+                    <option value="used_good">Used · good</option>
+                    <option value="used_fair">Used · fair</option>
+                    <option value="used_beat">Beat</option>
+                </select>
+            </label>
+            <label class="text-xs text-gray-400 space-y-1">
+                <span>Box</span>
+                <select name="box_condition" class="field">
+                    <option value="original_good">Original</option>
+                    <option value="original_damaged">Damaged</option>
+                    <option value="replacement">Replacement</option>
+                    <option value="no_box">No box</option>
+                </select>
+            </label>
+            <button id="submitBtn" type="submit" class="col-span-2 md:col-span-1 h-[42px] px-5 rounded-[10px] bg-white text-black text-sm font-semibold hover:bg-gray-200">
+                Check value
+            </button>
+        </form>
 
-        <!-- Valuation Input Card -->
-        <div class="bg-dark-800 border border-dark-700 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-            <div class="absolute -top-24 -right-24 w-60 h-60 bg-volt/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div id="resultsSection" class="hidden space-y-6">
 
-            <form id="valuationForm" class="space-y-6">
-                <!-- Top Row: SKU, Model Name, Size, StockX Price -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
-                                Model Code / SKU <span class="text-volt">*</span>
-                            </label>
-                            <a id="stockxDirectLink" href="https://stockx.com" target="_blank" rel="noopener noreferrer" class="text-[10px] text-volt hover:underline flex items-center gap-1 font-mono">
-                                <span>Check StockX ↗</span>
-                            </a>
-                        </div>
-                        <input
-                            type="text"
-                            id="skuInput"
-                            name="sku"
-                            required
-                            placeholder="e.g. FD2596-700, DD1391-100"
-                            class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-volt transition font-mono uppercase text-sm"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
-                            Sneaker Model Name <span class="text-gray-500 font-normal">(Optional)</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="modelNameInput"
-                            name="model_name"
-                            placeholder="e.g. Jordan 1 Retro High Reverse Laney"
-                            class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-volt transition text-sm"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
-                            Size <span class="text-volt">*</span>
-                        </label>
-                        <div class="relative">
-                            <input
-                                type="text"
-                                id="sizeInput"
-                                name="size"
-                                required
-                                placeholder="e.g. US W 11.5 or EU 44"
-                                value="US W 11.5"
-                                class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-volt transition text-sm font-medium"
-                            >
-                            <span class="absolute right-3 top-3 text-[10px] text-gray-500 font-mono">Auto-converts</span>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300">
-                                StockX Ask ($ USD) <span class="text-gray-500 font-normal">(Optional)</span>
-                            </label>
-                            <span class="text-[10px] text-emerald-400 font-mono">Live Anchor</span>
-                        </div>
-                        <input
-                            type="number"
-                            step="0.5"
-                            id="stockxPriceInput"
-                            name="stockx_price"
-                            placeholder="e.g. 105 (from your browser)"
-                            class="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-400 transition font-mono text-sm"
-                        >
-                    </div>
+            <!-- Product -->
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-xl bg-white flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <img id="sneakerImg" alt="" class="w-full h-full object-contain hidden">
+                    <span id="sneakerImgFallback" class="text-2xl">👟</span>
                 </div>
-
-                <!-- Condition & Box Condition -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                    <!-- Sneaker Condition -->
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
-                            Sneaker Condition <span class="text-volt">*</span>
-                        </label>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            <label class="condition-btn cursor-pointer border border-dark-600 bg-dark-900 rounded-xl p-3 flex flex-col hover:border-volt transition select-none">
-                                <input type="radio" name="condition" value="deadstock" checked class="hidden">
-                                <span class="font-bold text-sm text-volt">Deadstock (DS)</span>
-                                <span class="text-xs text-gray-400 mt-0.5">Brand New in Box (10/10)</span>
-                            </label>
-
-                            <label class="condition-btn cursor-pointer border border-dark-600 bg-dark-900 rounded-xl p-3 flex flex-col hover:border-volt transition select-none">
-                                <input type="radio" name="condition" value="vnds" class="hidden">
-                                <span class="font-bold text-sm text-gray-200">VNDS</span>
-                                <span class="text-xs text-gray-400 mt-0.5">Tried on / Worn once (9.5)</span>
-                            </label>
-
-                            <label class="condition-btn cursor-pointer border border-dark-600 bg-dark-900 rounded-xl p-3 flex flex-col hover:border-volt transition select-none">
-                                <input type="radio" name="condition" value="used_like_new" class="hidden">
-                                <span class="font-bold text-sm text-gray-200">Used - Like New</span>
-                                <span class="text-xs text-gray-400 mt-0.5">No creasing, clean sole (9/10)</span>
-                            </label>
-
-                            <label class="condition-btn cursor-pointer border border-dark-600 bg-dark-900 rounded-xl p-3 flex flex-col hover:border-volt transition select-none">
-                                <input type="radio" name="condition" value="used_good" class="hidden">
-                                <span class="font-bold text-sm text-gray-200">Used - Good</span>
-                                <span class="text-xs text-gray-400 mt-0.5">Minor wear & stars (7.5-8.5)</span>
-                            </label>
-
-                            <label class="condition-btn cursor-pointer border border-dark-600 bg-dark-900 rounded-xl p-3 flex flex-col hover:border-volt transition select-none">
-                                <input type="radio" name="condition" value="used_fair" class="hidden">
-                                <span class="font-bold text-sm text-gray-200">Used - Fair</span>
-                                <span class="text-xs text-gray-400 mt-0.5">Visible creasing/scuffs (5-7)</span>
-                            </label>
-
-                            <label class="condition-btn cursor-pointer border border-dark-600 bg-dark-900 rounded-xl p-3 flex flex-col hover:border-volt transition select-none">
-                                <input type="radio" name="condition" value="used_beat" class="hidden">
-                                <span class="font-bold text-sm text-gray-200">Beat / Project</span>
-                                <span class="text-xs text-gray-400 mt-0.5">Heavy wear / Restoration</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Box Condition -->
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">
-                            Box & Packaging Condition
-                        </label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <label class="box-btn cursor-pointer border border-dark-600 bg-dark-900 rounded-xl p-3 flex flex-col hover:border-volt transition select-none">
-                                <input type="radio" name="box_condition" value="original_good" checked class="hidden">
-                                <span class="font-bold text-sm text-white">Original Box (Good)</span>
-                                <span class="text-xs text-gray-400 mt-0.5">Complete with lid & tissue</span>
-                            </label>
-
-                            <label class="box-btn cursor-pointer border border-dark-600 bg-dark-900 rounded-xl p-3 flex flex-col hover:border-volt transition select-none">
-                                <input type="radio" name="box_condition" value="original_damaged" class="hidden">
-                                <span class="font-bold text-sm text-gray-200">Original (Damaged)</span>
-                                <span class="text-xs text-gray-400 mt-0.5">Tears, dings or missing lid</span>
-                            </label>
-
-                            <label class="box-btn cursor-pointer border border-dark-600 bg-dark-900 rounded-xl p-3 flex flex-col hover:border-volt transition select-none">
-                                <input type="radio" name="box_condition" value="replacement" class="hidden">
-                                <span class="font-bold text-sm text-gray-200">Replacement Box</span>
-                                <span class="text-xs text-gray-400 mt-0.5">Generic / other shoe box</span>
-                            </label>
-
-                            <label class="box-btn cursor-pointer border border-dark-600 bg-dark-900 rounded-xl p-3 flex flex-col hover:border-volt transition select-none">
-                                <input type="radio" name="box_condition" value="no_box" class="hidden">
-                                <span class="font-bold text-sm text-gray-200">No Box (Shoes Only)</span>
-                                <span class="text-xs text-gray-400 mt-0.5">Rejects on StockX (~ -20% value)</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Submit Button -->
-                <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div class="flex items-center gap-2 text-xs text-gray-400">
-                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <span>Cross-checks StockX, GOAT, eBay sold prices & Vinted 0% fees</span>
-                    </div>
-
-                    <button
-                        type="submit"
-                        id="submitBtn"
-                        class="w-full sm:w-auto px-8 py-3.5 bg-volt hover:bg-lime-400 text-black font-display font-bold text-base rounded-xl transition duration-200 shadow-lg shadow-volt/20 flex items-center justify-center gap-2"
-                    >
-                        <span>Estimate Market Price</span>
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Quick Preset Badges -->
-        <div id="quick-presets" class="space-y-3">
-            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">⚡ Or click a popular sneaker model:</h3>
-            <div class="flex flex-wrap gap-2">
-                {% for sku, item in popular_catalog.items() %}
-                <button
-                    type="button"
-                    onclick="selectPreset('{{ sku }}', '{{ item.title }}')"
-                    class="px-3.5 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-700 border border-dark-700 text-xs text-gray-300 hover:text-white transition flex items-center gap-2"
-                >
-                    <span class="font-mono text-volt font-bold">{{ sku }}</span>
-                    <span>{{ item.title }}</span>
-                </button>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Results Section (Dynamic) -->
-        <div id="resultsSection" class="hidden space-y-8 animate-fade-in">
-            <!-- Sneaker Header Info Card -->
-            <div class="bg-dark-800 border border-dark-700 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div class="flex items-center gap-5">
-                    <div id="sneakerImageContainer" class="w-20 h-20 bg-dark-900 rounded-xl border border-dark-600 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        <img id="sneakerImg" src="" alt="Sneaker" class="w-full h-full object-contain hidden">
-                        <span id="sneakerImgFallback" class="text-2xl font-bold text-gray-600">👟</span>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <span id="brandBadge" class="text-xs px-2 py-0.5 rounded bg-dark-700 text-volt font-mono font-bold uppercase">Nike</span>
-                            <span id="skuBadge" class="text-xs text-gray-400 font-mono">DD1391-100</span>
-                        </div>
-                        <h2 id="sneakerTitle" class="text-xl sm:text-2xl font-display font-bold text-white">Nike Dunk Low Panda</h2>
-                        <div class="flex items-center gap-3 text-xs text-gray-400 mt-1 font-mono">
-                            <span id="sizeBadge" class="text-gray-300">US 10M / EU 44</span>
-                            <span>•</span>
-                            <span id="conditionBadge" class="text-gray-300">Deadstock</span>
-                            <span>•</span>
-                            <span id="boxBadge" class="text-gray-300">Original Box</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-right flex flex-col items-end border-t md:border-t-0 md:border-l border-dark-700 pt-4 md:pt-0 md:pl-6 w-full md:w-auto">
-                    <span class="text-xs text-gray-400 uppercase tracking-wider font-semibold">StockX US DS Benchmark</span>
-                    <span id="stockxRefPrice" class="text-2xl font-display font-bold text-emerald-400">$125</span>
-                    <span class="text-xs text-gray-500">Retail: <span id="retailPrice">$115</span></span>
+                <div class="min-w-0">
+                    <h1 id="sneakerTitle" class="text-lg font-semibold text-white truncate"></h1>
+                    <div id="sneakerMeta" class="text-sm text-gray-400 font-mono"></div>
                 </div>
             </div>
 
-            <!-- Price Target Cards (3 Columns) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Quick Sale -->
-                <div class="bg-dark-800 border border-dark-700 rounded-2xl p-6 relative overflow-hidden">
-                    <div class="flex items-center justify-between text-xs text-rose-400 font-bold uppercase tracking-wider mb-2">
-                        <span>⚡ Quick Flip (24-48h)</span>
-                        <span class="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">Fast Cash</span>
-                    </div>
-                    <div id="quickSalePrice" class="text-4xl font-display font-black text-white mt-1">$110</div>
-                    <p class="text-xs text-gray-400 mt-2">
-                        Undercuts the lowest current ask by 8-10% or hits StockX/GOAT highest instant bid for immediate liquidation.
-                    </p>
+            <!-- StockX -->
+            <section class="bg-ink-800 border border-ink-700 rounded-2xl p-5 space-y-5">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base font-semibold text-white">StockX</h2>
+                    <a id="stockxLink" href="#" target="_blank" rel="noopener noreferrer" class="text-xs text-gray-400 hover:text-white">Open on StockX ↗</a>
                 </div>
 
-                <!-- Fair Market Price (Primary) -->
-                <div class="bg-dark-800 border-2 border-volt rounded-2xl p-6 relative overflow-hidden shadow-xl shadow-volt/5">
-                    <div class="flex items-center justify-between text-xs text-volt font-bold uppercase tracking-wider mb-2">
-                        <span>🎯 Fair Market Target</span>
-                        <span class="px-2 py-0.5 rounded bg-volt/20 text-volt border border-volt/30">Recommended</span>
-                    </div>
-                    <div id="fairMarketPrice" class="text-4xl font-display font-black text-volt mt-1">$125</div>
-                    <p class="text-xs text-gray-300 mt-2">
-                        The sweet spot balancing fast turnaround (1-2 weeks) with full market equity.
-                    </p>
-                    <div class="mt-3 text-xs text-gray-400 pt-3 border-t border-dark-700 flex justify-between">
-                        <span>Expected Range:</span>
-                        <span id="marketRange" class="font-mono text-white font-bold">$115 - $138</span>
-                    </div>
+                <!-- Not synced yet -->
+                <div id="stockxEmpty" class="hidden rounded-xl border border-dashed border-ink-500 p-5 text-sm text-gray-300 space-y-3">
+                    <p class="font-medium text-white">No StockX data for this size yet.</p>
+                    <ol class="list-decimal list-inside space-y-1 text-gray-400">
+                        <li>Drag <span class="text-gray-200">⇅ SNKRS sync</span> (top right) to your Chrome bookmarks bar, once.</li>
+                        <li>On StockX, open this sneaker, pick your size, then open <span class="text-gray-200">Market Data › Sales</span>.</li>
+                        <li>Click the bookmark. Then check value again here.</li>
+                    </ol>
                 </div>
 
-                <!-- Patient / Maximum Value -->
-                <div class="bg-dark-800 border border-dark-700 rounded-2xl p-6 relative overflow-hidden">
-                    <div class="flex items-center justify-between text-xs text-accent font-bold uppercase tracking-wider mb-2">
-                        <span>💎 Top Dollar (Patient)</span>
-                        <span class="px-2 py-0.5 rounded bg-accent/10 text-accent border border-accent/20">Max Return</span>
+                <div id="stockxData" class="hidden space-y-5">
+                    <!-- Top stats -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="rounded-xl bg-ink-700 p-4">
+                            <div class="text-xs text-gray-400">Net payout if you sell now</div>
+                            <div id="netPayout" class="text-3xl font-bold text-white tnum mt-1">–</div>
+                            <details class="mt-2 text-xs text-gray-400">
+                                <summary class="cursor-pointer select-none">Highest bid <span id="highestBid" class="text-gray-200 tnum"></span></summary>
+                                <dl id="payoutBreakdown" class="mt-2 space-y-1 tnum"></dl>
+                            </details>
+                        </div>
+                        <div class="rounded-xl bg-ink-700 p-4">
+                            <div class="text-xs text-gray-400">Lowest ask</div>
+                            <div id="lowestAsk" class="text-3xl font-bold text-white tnum mt-1">–</div>
+                            <div id="lowestAskNet" class="text-xs text-gray-400 mt-2"></div>
+                        </div>
+                        <div class="rounded-xl bg-ink-700 p-4">
+                            <div class="text-xs text-gray-400">Last sale</div>
+                            <div id="lastSale" class="text-3xl font-bold text-white tnum mt-1">–</div>
+                            <div id="lastSaleDate" class="text-xs text-gray-400 mt-2"></div>
+                        </div>
                     </div>
-                    <div id="patientSalePrice" class="text-4xl font-display font-black text-white mt-1">$140</div>
-                    <p class="text-xs text-gray-400 mt-2">
-                        Targeting top-tier buyers or waiting for next market demand surge (3-6+ weeks).
-                    </p>
-                </div>
-            </div>
 
-            <!-- Best Platform to Sell Banner -->
-            <div id="bestPlatformBanner" class="p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 to-dark-800 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div class="space-y-1">
-                    <div class="flex items-center gap-2">
-                        <span class="text-lg">🏆</span>
-                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 font-mono">Recommended Platform to Sell</span>
+                    <!-- History -->
+                    <div class="space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div id="rangePills" class="flex gap-2">
+                                <button type="button" class="pill" data-range="1m">1M</button>
+                                <button type="button" class="pill" data-range="3m">3M</button>
+                                <button type="button" class="pill active" data-range="6m">6M</button>
+                                <button type="button" class="pill" data-range="3y">3Y</button>
+                            </div>
+                            <div class="flex gap-6 text-right">
+                                <div>
+                                    <div class="text-xs text-gray-400">Avg sale price</div>
+                                    <div id="avgPrice" class="text-xl font-semibold text-white tnum">–</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-400">Units sold</div>
+                                    <div id="unitsSold" class="text-xl font-semibold text-white tnum">–</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-400">Low – High</div>
+                                    <div id="lowHigh" class="text-xl font-semibold text-white tnum">–</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="chart" class="w-full"></div>
+                        <div id="historyNote" class="text-xs text-gray-500"></div>
                     </div>
-                    <h3 id="bestPlatformTitle" class="text-2xl font-display font-bold text-white">Sell on Vinted (US)</h3>
-                    <p id="bestPlatformReason" class="text-sm text-gray-300 max-w-2xl">
-                        Vinted charges 0% seller commission compared to StockX's ~12% fee, earning you more in your pocket.
-                    </p>
-                </div>
-                <div class="text-right sm:text-right flex-shrink-0">
-                    <span class="text-xs text-gray-400 uppercase tracking-wider block">Estimated Net Take-Home</span>
-                    <span id="bestPlatformPayout" class="text-3xl font-display font-extrabold text-volt">$125.00</span>
-                </div>
-            </div>
 
-            <!-- Platform Breakdown Table -->
-            <div class="bg-dark-800 border border-dark-700 rounded-2xl p-6 overflow-hidden">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-display font-bold text-white flex items-center gap-2">
-                        <span>📊 Cross-Platform Comparison & Net Payout</span>
-                    </h3>
-                    <span class="text-xs text-gray-400 font-mono">Includes Seller Fees Deduction</span>
+                    <!-- Sales list -->
+                    <div class="max-h-72 overflow-y-auto border-t border-ink-700">
+                        <table class="w-full text-sm tnum">
+                            <thead class="sticky top-0 bg-ink-800 text-xs text-gray-400">
+                                <tr><th class="text-left font-medium py-2">Date</th><th class="text-left font-medium">Time</th><th class="text-left font-medium">Size</th><th class="text-right font-medium">Sale price</th></tr>
+                            </thead>
+                            <tbody id="salesBody" class="divide-y divide-ink-700"></tbody>
+                        </table>
+                    </div>
+                    <div id="syncedAt" class="text-xs text-gray-500"></div>
                 </div>
+            </section>
 
+            <!-- Estimate & other marketplaces -->
+            <section class="bg-ink-800 border border-ink-700 rounded-2xl p-5 space-y-4">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 class="text-base font-semibold text-white">Estimate for your condition</h2>
+                    <div class="text-sm text-gray-400">Quick <span id="quickSalePrice" class="text-white tnum"></span> · Fair <span id="fairMarketPrice" class="text-white font-semibold tnum"></span> · Patient <span id="patientSalePrice" class="text-white tnum"></span></div>
+                </div>
+                <p class="text-sm text-gray-400"><span class="text-white">Best place to sell: <span id="bestPlatformTitle"></span>.</span> <span id="bestPlatformReason"></span></p>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead>
-                            <tr class="border-b border-dark-700 text-xs uppercase text-gray-400 font-semibold tracking-wider">
-                                <th class="pb-3 pl-2">Marketplace</th>
-                                <th class="pb-3">Lowest Ask</th>
-                                <th class="pb-3">Instant Bid / Sold</th>
-                                <th class="pb-3">Seller Fee</th>
-                                <th class="pb-3 text-right">Net Cash in Pocket</th>
-                                <th class="pb-3 text-center">Action</th>
-                            </tr>
+                    <table class="w-full text-sm tnum">
+                        <thead class="text-xs text-gray-400 border-b border-ink-700">
+                            <tr><th class="text-left font-medium py-2">Marketplace</th><th class="text-left font-medium">Lowest ask</th><th class="text-left font-medium">Bid / sold</th><th class="text-left font-medium">Seller fee</th><th class="text-right font-medium">Net payout</th></tr>
                         </thead>
-                        <tbody id="platformsTableBody" class="divide-y divide-dark-700 font-mono">
-                            <!-- Populated dynamically -->
-                        </tbody>
+                        <tbody id="platformsTableBody" class="divide-y divide-ink-700"></tbody>
                     </table>
                 </div>
-            </div>
-
-            <!-- Actionable Reselling Insights -->
-            <div class="bg-dark-800 border border-dark-700 rounded-2xl p-6 space-y-4">
-                <h3 class="text-base font-display font-bold text-white flex items-center gap-2">
-                    <span>💡 Reseller Insights & Maximizing Value</span>
-                </h3>
-                <ul id="insightsList" class="space-y-3 text-sm text-gray-300">
-                    <!-- Populated dynamically -->
-                </ul>
-            </div>
+                <p class="text-xs text-gray-500">GOAT, eBay and Vinted figures are estimates.</p>
+            </section>
         </div>
 
-        <!-- Recent Valuations History -->
-        <div class="pt-6 border-t border-dark-800 space-y-4">
-            <h3 class="text-sm font-semibold uppercase tracking-wider text-gray-400">🕒 Recent Community Valuations</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {% for r in recent_history %}
-                <div class="bg-dark-800 border border-dark-700 p-4 rounded-xl flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-mono text-volt font-bold">{{ r.sku }}</div>
-                        <div class="text-sm font-semibold text-white truncate max-w-[180px]">{{ r.model_name or 'Sneaker' }}</div>
-                        <div class="text-xs text-gray-400">{{ r.size_input }} • {{ r.condition }}</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-base font-display font-bold text-white">${{ r.fair_market_price }}</div>
-                        <div class="text-xs text-emerald-400">via {{ r.best_platform }}</div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
+        <!-- Manual paste fallback -->
+        <details class="text-sm text-gray-400">
+            <summary class="cursor-pointer select-none">Paste StockX data instead</summary>
+            <form id="pasteForm" class="mt-3 space-y-2">
+                <input id="pasteSku" placeholder="Style code (if not in the pasted text)" class="field font-mono uppercase">
+                <textarea id="pasteText" rows="5" placeholder="On StockX, select all (⌘A) on the product page with Market Data › Sales open, copy, and paste here." class="field"></textarea>
+                <button type="submit" class="px-4 py-2 rounded-lg bg-ink-700 text-gray-200 hover:bg-ink-600">Import</button>
+                <span id="pasteResult" class="ml-2"></span>
+            </form>
+        </details>
     </main>
 
-    <!-- Footer -->
-    <footer class="border-t border-dark-800 py-6 text-center text-xs text-gray-500 font-mono mt-12">
-        SNKRS Valuation Engine • StockX Benchmark Reference • eBay • Vinted • GOAT
-    </footer>
-
-    <!-- Frontend Script -->
     <script>
-        // Condition radio styling
-        document.querySelectorAll('input[name="condition"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                document.querySelectorAll('.condition-btn').forEach(btn => {
-                    btn.classList.remove('border-volt', 'bg-dark-700');
-                    btn.classList.add('border-dark-600', 'bg-dark-900');
-                });
-                const parent = radio.closest('.condition-btn');
-                parent.classList.remove('border-dark-600', 'bg-dark-900');
-                parent.classList.add('border-volt', 'bg-dark-700');
-            });
-        });
+        const $ = (id) => document.getElementById(id);
+        const usd = (v) => v == null ? '–' : '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 });
+        const fmtDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const fmtTime = (iso) => new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-        document.querySelectorAll('input[name="box_condition"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                document.querySelectorAll('.box-btn').forEach(btn => {
-                    btn.classList.remove('border-volt', 'bg-dark-700');
-                    btn.classList.add('border-dark-600', 'bg-dark-900');
-                });
-                const parent = radio.closest('.box-btn');
-                parent.classList.remove('border-dark-600', 'bg-dark-900');
-                parent.classList.add('border-volt', 'bg-dark-700');
-            });
-        });
+        // Sync bookmark: sends the StockX page text from your browser to this app
+        const appOrigin = location.origin;
+        const bookmarklet = `(()=>{const o=${JSON.stringify(appOrigin)};if(location.hostname!=='stockx.com'){alert('Open a StockX product page first');return}` +
+            `const d={text:document.body.innerText,title:document.title,url:location.origin+location.pathname,` +
+            `image_url:(document.querySelector('meta[property="og:image"]')||{}).content||null};` +
+            `const w=window.open(o+'/sync','snkrs_sync');const t=setInterval(()=>{try{w.postMessage(d,o)}catch(e){}},400);` +
+            `addEventListener('message',e=>{if(e.origin===o&&e.data==='snkrs-ok')clearInterval(t)});setTimeout(()=>clearInterval(t),20000)})()`;
+        $('syncBookmark').href = 'javascript:' + encodeURIComponent(bookmarklet);
+        $('syncBookmark').addEventListener('click', (e) => { e.preventDefault(); alert('Drag this button to your bookmarks bar, then click it on a StockX product page.'); });
 
-        // SKU input auto-updates StockX search link
-        const skuInput = document.getElementById('skuInput');
-        const stockxDirectLink = document.getElementById('stockxDirectLink');
-        skuInput.addEventListener('input', () => {
-            const val = skuInput.value.trim();
-            if (val) {
-                stockxDirectLink.href = `https://stockx.com/search?s=${encodeURIComponent(val)}`;
-                stockxDirectLink.textContent = `Search "${val}" on StockX ↗`;
-            } else {
-                stockxDirectLink.href = 'https://stockx.com';
-                stockxDirectLink.textContent = 'Check StockX ↗';
-            }
-        });
+        let current = { sku: null, size: null, range: '6m' };
 
-        function selectPreset(sku, title) {
-            document.getElementById('skuInput').value = sku;
-            document.getElementById('modelNameInput').value = title;
-            stockxDirectLink.href = `https://stockx.com/search?s=${encodeURIComponent(sku)}`;
-            stockxDirectLink.textContent = `Search "${sku}" on StockX ↗`;
-            document.getElementById('valuationForm').dispatchEvent(new Event('submit'));
-        }
-
-        const form = document.getElementById('valuationForm');
-        const submitBtn = document.getElementById('submitBtn');
-        const resultsSection = document.getElementById('resultsSection');
-
-        form.addEventListener('submit', async (e) => {
+        $('valuationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `
-                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-black" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                </svg>
-                Evaluating Marketplaces...
-            `;
-
-            const formData = new FormData(form);
-
+            const btn = $('submitBtn');
+            btn.disabled = true; btn.textContent = 'Checking…';
             try {
-                const response = await fetch('/api/evaluate', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
+                const res = await fetch('/api/evaluate', { method: 'POST', body: new FormData(e.target) });
+                const data = await res.json();
                 renderResults(data);
-                resultsSection.classList.remove('hidden');
-                resultsSection.scrollIntoView({ behavior: 'smooth' });
+                $('resultsSection').classList.remove('hidden');
+                history.replaceState(null, '', `/?sku=${encodeURIComponent(data.sku)}&size=${encodeURIComponent($('sizeInput').value)}`);
             } catch (err) {
-                alert('Evaluation error: ' + err.message);
+                alert('Could not check value: ' + err.message);
             } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = `
-                    <span>Estimate Market Price</span>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                `;
+                btn.disabled = false; btn.textContent = 'Check value';
             }
         });
 
         function renderResults(data) {
-            document.getElementById('brandBadge').textContent = data.brand || 'Sneaker';
-            document.getElementById('skuBadge').textContent = data.sku;
-            document.getElementById('sneakerTitle').textContent = data.model_name;
-            document.getElementById('sizeBadge').textContent = `US ${data.normalized_size_us}M / EU ${data.normalized_size_eu}`;
-            document.getElementById('conditionBadge').textContent = data.condition.replace('_', ' ').toUpperCase();
-            document.getElementById('boxBadge').textContent = data.box_condition.replace('_', ' ').toUpperCase();
-            
-            document.getElementById('stockxRefPrice').textContent = data.stockx_reference_price ? `$${data.stockx_reference_price}` : 'N/A';
-            document.getElementById('retailPrice').textContent = data.retail_price ? `$${data.retail_price}` : 'N/A';
+            const sx = data.platforms.stockx || {};
+            $('sneakerTitle').textContent = data.model_name;
+            $('sneakerMeta').textContent = `${data.sku} · ${sx.size_label || $('sizeInput').value}`;
+            const img = $('sneakerImg');
+            if (data.image_url) { img.src = data.image_url; img.classList.remove('hidden'); $('sneakerImgFallback').classList.add('hidden'); }
+            else { img.classList.add('hidden'); $('sneakerImgFallback').classList.remove('hidden'); }
+            $('stockxLink').href = sx.product_url || `https://stockx.com/search?s=${encodeURIComponent(data.sku)}`;
 
-            // Image
-            const img = document.getElementById('sneakerImg');
-            const fallback = document.getElementById('sneakerImgFallback');
-            if (data.image_url) {
-                img.src = data.image_url;
-                img.classList.remove('hidden');
-                fallback.classList.add('hidden');
-            } else {
-                img.classList.add('hidden');
-                fallback.classList.remove('hidden');
-            }
+            renderStockX(data.sku, sx);
+            renderOthers(data);
+        }
 
-            // Price targets
-            document.getElementById('quickSalePrice').textContent = `$${data.quick_sale_price}`;
-            document.getElementById('fairMarketPrice').textContent = `$${data.fair_market_price}`;
-            document.getElementById('patientSalePrice').textContent = `$${data.patient_sale_price}`;
-            document.getElementById('marketRange').textContent = `$${data.estimated_range_min} - $${data.estimated_range_max}`;
+        function renderStockX(sku, sx) {
+            const synced = sx.data_source === 'browser_sync';
+            $('stockxEmpty').classList.toggle('hidden', synced);
+            $('stockxData').classList.toggle('hidden', !synced);
+            if (!synced) return;
 
-            // Best platform
-            document.getElementById('bestPlatformTitle').textContent = `Sell on ${data.best_platform_to_sell}`;
-            document.getElementById('bestPlatformReason').textContent = data.best_platform_reason;
-            
-            const bestPlatformData = data.platforms[data.best_platform_to_sell.toLowerCase()];
-            const payout = bestPlatformData ? bestPlatformData.estimated_net_payout : data.fair_market_price;
-            document.getElementById('bestPlatformPayout').textContent = `$${payout}`;
+            $('netPayout').textContent = usd(sx.estimated_net_payout);
+            $('highestBid').textContent = usd(sx.highest_bid);
+            const b = sx.payout_breakdown;
+            $('payoutBreakdown').innerHTML = b ? [
+                ['Your ask (bid)', usd(b.price)],
+                ['Transaction fee (9%)', '−' + usd(b.transaction_fee)],
+                ['Payment proc. (3%)', '−' + usd(b.processing_fee)],
+                ['Shipping', '−' + usd(b.shipping)],
+                ['Total payout', usd(b.payout)],
+            ].map(([k, v], i, a) => `<div class="flex justify-between ${i === a.length - 1 ? 'text-gray-100 font-semibold pt-1 border-t border-ink-600' : ''}"><dt>${k}</dt><dd>${v}</dd></div>`).join('') : '';
 
-            // Table
-            const tbody = document.getElementById('platformsTableBody');
-            tbody.innerHTML = '';
+            $('lowestAsk').textContent = usd(sx.lowest_ask);
+            $('lowestAskNet').textContent = sx.lowest_ask_net_payout != null ? `${usd(sx.lowest_ask_net_payout)} net if you match it` : '';
+            const last = (sx.recent_sales || [])[0];
+            $('lastSale').textContent = usd(last && last.price);
+            $('lastSaleDate').textContent = last ? fmtDate(last.date) : '';
+            $('syncedAt').textContent = sx.synced_at ? `Synced from your StockX session on ${fmtDate(sx.synced_at.replace(' ', 'T') + 'Z')}. Sync again for fresh prices.` : '';
 
-            const platformBadges = {
-                stockx: { name: 'StockX (US)', badge: 'bg-emerald-900/60 text-emerald-300 border-emerald-700', url: `https://stockx.com/search?s=${encodeURIComponent(data.sku)}` },
-                goat: { name: 'GOAT (US)', badge: 'bg-zinc-800 text-gray-200 border-zinc-700', url: `https://www.goat.com/search?query=${encodeURIComponent(data.sku)}` },
-                ebay: { name: 'eBay (US)', badge: 'bg-red-950/60 text-red-300 border-red-800', url: `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(data.sku)}&LH_BIN=1` },
-                vinted: { name: 'Vinted (US)', badge: 'bg-teal-950/60 text-teal-300 border-teal-800', url: `https://www.vinted.com/catalog?search_text=${encodeURIComponent(data.sku)}` },
+            current.sku = sku;
+            current.size = $('sizeInput').value;
+            loadHistory();
+        }
+
+        async function loadHistory() {
+            document.querySelectorAll('#rangePills .pill').forEach(p => p.classList.toggle('active', p.dataset.range === current.range));
+            const q = new URLSearchParams({ sku: current.sku, size: current.size, range: current.range });
+            const h = await (await fetch('/api/stockx/history?' + q)).json();
+            $('avgPrice').textContent = usd(h.avg_price);
+            $('unitsSold').textContent = h.units_sold;
+            $('lowHigh').textContent = h.units_sold ? `${usd(h.low)} – ${usd(h.high)}` : '–';
+            $('salesBody').innerHTML = h.points.slice().reverse().map(s =>
+                `<tr><td class="py-2">${fmtDate(s.date)}</td><td class="text-gray-400">${fmtTime(s.date)}</td><td class="text-gray-400">${esc(s.size)}</td><td class="text-right text-white">${usd(s.price)}</td></tr>`
+            ).join('') || '<tr><td colspan="4" class="py-4 text-center text-gray-500">No sales in this period</td></tr>';
+            drawChart(h.points, current.range);
+
+            const oldest = h.oldest_sale ? fmtDate(h.oldest_sale) : null;
+            $('historyNote').textContent = oldest
+                ? `${h.sales_on_file} sales on file, back to ${oldest}. StockX only shows the latest 50 sales per size, so older history builds up as you keep syncing.`
+                : '';
+        }
+
+        document.querySelectorAll('#rangePills .pill').forEach(p => p.addEventListener('click', () => { current.range = p.dataset.range; loadHistory(); }));
+
+        // Step chart of sale prices over the selected period
+        function drawChart(points, range) {
+            const W = 900, H = 240, L = 44, R = 8, T = 10, B = 26;
+            const days = { '1m': 30, '3m': 91, '6m': 182, '3y': 1095 }[range];
+            const end = Date.now(), start = end - days * 864e5;
+            if (!points.length) { $('chart').innerHTML = `<div class="h-[120px] flex items-center justify-center text-sm text-gray-500">No sales in this period</div>`; return; }
+
+            const prices = points.map(p => p.price);
+            let lo = Math.min(...prices), hi = Math.max(...prices);
+            const pad = Math.max(5, (hi - lo) * 0.15); lo = Math.max(0, lo - pad); hi = hi + pad;
+            const x = (t) => L + (t - start) / (end - start) * (W - L - R);
+            const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+
+            const pts = points.map(p => ({ t: new Date(p.date).getTime(), v: p.price, p }));
+            let d = `M${x(pts[0].t)},${y(pts[0].v)}`;
+            for (let i = 1; i < pts.length; i++) d += ` H${x(pts[i].t)} V${y(pts[i].v)}`;
+            d += ` H${x(end)}`;
+            const area = d + ` V${H - B} H${x(pts[0].t)} Z`;
+
+            const yTicks = [0, 1, 2, 3].map(i => lo + (hi - lo) * i / 3);
+            const xTicks = [0, 1, 2, 3, 4].map(i => start + (end - start) * i / 4);
+            const lbl = (t) => new Date(t).toLocaleDateString('en-US', range === '3y' ? { month: 'short', year: '2-digit' } : { month: 'short', day: 'numeric' });
+
+            $('chart').innerHTML = `
+            <svg viewBox="0 0 ${W} ${H}" class="w-full h-auto" role="img" aria-label="Sale prices over time">
+                ${yTicks.map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="#1E212A"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="#6B7280">$${Math.round(v)}</text>`).join('')}
+                ${xTicks.map((t, i) => `<text x="${x(t)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === 4 ? 'end' : 'middle'}" font-size="11" fill="#6B7280">${lbl(t)}</text>`).join('')}
+                <path d="${area}" fill="#3FA36B" fill-opacity="0.18"/>
+                <path d="${d}" fill="none" stroke="#E5E7EB" stroke-width="2"/>
+                ${pts.map(q => `<circle cx="${x(q.t)}" cy="${y(q.v)}" r="3" fill="#E5E7EB"><title>${fmtDate(q.p.date)} · ${usd(q.v)}</title></circle>`).join('')}
+            </svg>`;
+        }
+
+        function renderOthers(data) {
+            $('quickSalePrice').textContent = usd(data.quick_sale_price);
+            $('fairMarketPrice').textContent = usd(data.fair_market_price);
+            $('patientSalePrice').textContent = usd(data.patient_sale_price);
+            $('bestPlatformTitle').textContent = data.best_platform_to_sell;
+            $('bestPlatformReason').textContent = data.best_platform_reason;
+
+            const links = {
+                goat: `https://www.goat.com/search?query=${encodeURIComponent(data.sku)}`,
+                ebay: `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(data.sku)}&LH_BIN=1`,
+                vinted: `https://www.vinted.com/catalog?search_text=${encodeURIComponent(data.sku)}`,
             };
+            $('platformsTableBody').innerHTML = Object.entries(data.platforms)
+                .filter(([pid, p]) => pid !== 'stockx' && p)
+                .map(([pid, p]) => {
+                    const fee = p.seller_fee_percentage > 0 ? `${p.seller_fee_percentage}% + ${usd(p.seller_fixed_fee)}` : '0%';
+                    const bid = p.highest_bid ? `Bid ${usd(p.highest_bid)}` : (p.last_sale_price ? `Sold ${usd(p.last_sale_price)}` : '–');
+                    return `<tr>
+                        <td class="py-2"><a href="${links[pid] || '#'}" target="_blank" rel="noopener noreferrer" class="text-white hover:underline">${esc(p.platform_name)}</a></td>
+                        <td>${usd(p.lowest_ask)}</td><td class="text-gray-400">${bid}</td><td class="text-gray-400">${fee}</td>
+                        <td class="text-right text-white font-semibold">${usd(p.estimated_net_payout)}</td>
+                    </tr>`;
+                }).join('');
+        }
 
-            for (const [pid, p] of Object.entries(data.platforms)) {
-                if (!p) continue;
-                const info = platformBadges[pid] || { name: p.platform_name, badge: 'bg-dark-700 text-gray-200', url: '#' };
-                const feeText = p.seller_fee_percentage > 0 ? `${p.seller_fee_percentage}% + $${p.seller_fixed_fee}` : '<span class="text-volt font-bold">0% (Free!)</span>';
-                const bidText = p.highest_bid ? `Bid: $${p.highest_bid}` : (p.last_sale_price ? `Sold: $${p.last_sale_price}` : '-');
-
-                let sourceBadge = '';
-                if (pid === 'stockx') {
-                    if (p.data_source === 'user_override') {
-                        sourceBadge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono border border-blue-500/30">User Anchor</span>';
-                    } else if (p.data_source === 'catalog') {
-                        sourceBadge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono border border-emerald-500/30">Verified Catalog</span>';
-                    } else {
-                        sourceBadge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono border border-amber-500/30">Bot Protected • Fallback</span>';
-                    }
-                }
-
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-dark-700/50 transition';
-                tr.innerHTML = `
-                    <td class="py-4 pl-2 font-sans font-bold">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs px-2.5 py-1 rounded-md border font-mono ${info.badge}">${info.name}</span>
-                            ${sourceBadge}
-                        </div>
-                        ${p.notes ? `<div class="text-[11px] text-gray-400 font-normal font-sans mt-1 max-w-xs">${p.notes}</div>` : ''}
-                    </td>
-                    <td class="py-4 text-white">$${p.lowest_ask || '-'}</td>
-                    <td class="py-4 text-gray-400">${bidText}</td>
-                    <td class="py-4 text-gray-300 font-sans">${feeText}</td>
-                    <td class="py-4 text-right text-base font-bold text-volt">$${p.estimated_net_payout || '-'}</td>
-                    <td class="py-4 text-center font-sans">
-                        <a href="${info.url}" target="_blank" rel="noopener noreferrer" class="text-xs px-3 py-1.5 rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-300 hover:text-white border border-dark-600 transition inline-flex items-center gap-1">
-                            <span>View</span>
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                        </a>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            }
-
-            // Insights
-            const insightsUl = document.getElementById('insightsList');
-            insightsUl.innerHTML = '';
-            (data.insights || []).forEach(tip => {
-                const li = document.createElement('li');
-                li.className = 'flex items-start gap-2';
-                // replace markdown **
-                const formatted = tip.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>');
-                li.innerHTML = `<span class="text-volt mt-1">•</span> <span>${formatted}</span>`;
-                insightsUl.appendChild(li);
+        // Manual paste import
+        $('pasteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/stockx/sync', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: $('pasteText').value, sku: $('pasteSku').value || null }),
             });
+            const data = await res.json();
+            $('pasteResult').textContent = res.ok ? `Imported ${data.sku}: ${data.sales_found} sales (${data.sales_added} new)` : (data.detail || 'Import failed');
+            if (res.ok) { $('skuInput').value = data.sku; if (data.size) $('sizeInput').value = data.size; $('valuationForm').requestSubmit(); }
+        });
+
+        // Prefill from URL (e.g. after a sync)
+        const params = new URLSearchParams(location.search);
+        if (params.get('sku')) {
+            $('skuInput').value = params.get('sku');
+            if (params.get('size')) $('sizeInput').value = params.get('size');
+            $('valuationForm').requestSubmit();
         }
     </script>
 </body>

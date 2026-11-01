@@ -65,6 +65,13 @@ class PlatformSummary(BaseModel):
     average_price: Optional[float] = None
     sample_count: int = 0
     
+    # Historical Sales Metrics (StockX specific & platform sales history)
+    last_20_sales_avg: Optional[float] = None
+    last_year_sales_avg: Optional[float] = None
+    sales_52_week_high: Optional[float] = None
+    sales_52_week_low: Optional[float] = None
+    recent_sales: List[Dict[str, Any]] = Field(default_factory=list)
+    
     # Listings
     listings: List[MarketListing] = Field(default_factory=list)
     
@@ -73,6 +80,16 @@ class PlatformSummary(BaseModel):
     seller_fixed_fee: float = 0.0
     estimated_net_payout: Optional[float] = None
     notes: Optional[str] = None
+
+    # StockX synced data
+    product_title: Optional[str] = None
+    image_url: Optional[str] = None
+    product_url: Optional[str] = None
+    size_key: Optional[str] = None
+    size_label: Optional[str] = None
+    synced_at: Optional[str] = None
+    lowest_ask_net_payout: Optional[float] = None
+    payout_breakdown: Optional[Dict[str, float]] = None
 
 
 class ValuationReport(BaseModel):
@@ -91,6 +108,12 @@ class ValuationReport(BaseModel):
 
     # Reference baseline (StockX Deadstock)
     stockx_reference_price: Optional[float] = None
+    stockx_last_20_sales_avg: Optional[float] = None
+    stockx_last_year_sales_avg: Optional[float] = None
+    stockx_52_week_high: Optional[float] = None
+    stockx_52_week_low: Optional[float] = None
+    stockx_recent_sales: List[Dict[str, Any]] = Field(default_factory=list)
+
     condition_multiplier: float = 1.0
     box_multiplier: float = 1.0
 

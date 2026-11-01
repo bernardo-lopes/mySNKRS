@@ -49,7 +49,9 @@ class VintedMarketplace(BaseMarketplace):
         condition: ConditionGrade,
         box_condition: BoxCondition,
         currency: str = "USD",
-        stockx_override: Optional[float] = None
+        stockx_override: Optional[float] = None,
+        stockx_last_20_avg: Optional[float] = None,
+        stockx_year_avg: Optional[float] = None
     ) -> PlatformSummary:
         clean_sku = sku.strip().upper()
         search_term = f"{clean_sku} {int(size_eu)}" if clean_sku else f"{model_name} {int(size_eu)}"

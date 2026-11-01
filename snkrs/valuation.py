@@ -81,8 +81,12 @@ class SneakerValuationEngine:
             brand = item["brand"]
             retail_price = item["retail_price"]
             image_url = item.get("image_url")
-            retail_price = CATALOG_BENCHMARKS[clean_sku]["retail_price"]
-            image_url = CATALOG_BENCHMARKS[clean_sku].get("image_url")
+
+        # Synced StockX data has the exact product name and photo
+        if stockx and stockx.product_title:
+            resolved_name = stockx.product_title
+        if stockx and stockx.image_url:
+            image_url = stockx.image_url
 
         # 2. Multipliers
         cond_mult = cls.CONDITION_MULTIPLIERS.get(condition, 1.00)
@@ -126,8 +130,9 @@ class SneakerValuationEngine:
 
         # 5. Net Profit Analysis per platform
         # Calculate take-home payout for each platform at fair market price
+        # StockX computes its own payout from the highest bid
         for pid, pdata in platforms_data.items():
-            if pdata:
+            if pdata and pid != "stockx":
                 gross = pdata.lowest_ask or fair_market_price
                 fee = (gross * (pdata.seller_fee_percentage / 100.0)) + pdata.seller_fixed_fee
                 pdata.estimated_net_payout = max(0.0, round(gross - fee, 2))

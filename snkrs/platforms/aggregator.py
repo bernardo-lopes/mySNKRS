@@ -37,7 +37,9 @@ class MarketplaceAggregator:
         condition: ConditionGrade,
         box_condition: BoxCondition,
         currency: str = "USD",
-        stockx_override: Optional[float] = None
+        stockx_override: Optional[float] = None,
+        stockx_last_20_avg: Optional[float] = None,
+        stockx_year_avg: Optional[float] = None
     ) -> Dict[str, PlatformSummary]:
         """Runs concurrent queries against all marketplaces."""
         tasks = []
@@ -54,7 +56,9 @@ class MarketplaceAggregator:
                     condition=condition,
                     box_condition=box_condition,
                     currency=currency,
-                    stockx_override=stockx_override
+                    stockx_override=stockx_override,
+                    stockx_last_20_avg=stockx_last_20_avg,
+                    stockx_year_avg=stockx_year_avg
                 )
             )
 
