@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+snkrs_data.db
+.DS_Store
