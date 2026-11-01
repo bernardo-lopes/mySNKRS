@@ -77,3 +77,24 @@ def test_edit_sell_and_remove():
 def test_inventory_page_renders():
     r = TestClient(app).get("/inventory")
     assert r.status_code == 200 and "Inventory" in r.text
+
+
+def test_export_excel_and_pdf():
+    from io import BytesIO
+    from openpyxl import load_workbook
+
+    client = _client_with_laney_synced()
+    client.post("/api/inventory", json={"sku": "FD2596-700", "size": "US W 11.5", "purchase_price": 40})
+    client.post("/api/inventory", json={"sku": "EG7596", "size": "US 10", "model_name": "Yeezy Boost 700 Analog"})
+
+    r = client.get("/api/inventory/export.xlsx")
+    assert r.status_code == 200 and "attachment" in r.headers["content-disposition"]
+    ws = load_workbook(BytesIO(r.content)).active
+    assert ws["A1"].value == "mySNKRS Inventory"
+    assert [ws.cell(row=7, column=c).value for c in (2, 3, 12)] == ["Sneaker", "Style code", "Net if sold now"]
+    assert (ws["B8"].value, ws["L8"].value, ws["G8"].value) == ("Jordan 1 Retro High OG Reverse Laney (Women's)", 50.44, 40)
+    assert ws["L10"].value == "=SUM(L8:L9)"
+
+    r = client.get("/api/inventory/export.pdf", params={"status": "sold"})
+    assert r.status_code == 200 and r.content.startswith(b"%PDF")
+    assert client.get("/api/inventory/export.csv").status_code == 422

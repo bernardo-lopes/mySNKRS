@@ -1,0 +1,62 @@
+{# Shared head: Tailwind, fonts, and the light/dark theme. Colors are CSS variables, so every
+   page switches by toggling the "light" class on <html>. #}
+<meta name="color-scheme" content="dark light">
+<meta name="darkreader-lock">
+<script>
+    // Pick the theme before the page paints: saved choice first, else the system setting
+    (() => {
+        let saved = null;
+        try { saved = localStorage.getItem('snkrs-theme'); } catch (e) {}
+        const light = saved ? saved === 'light' : matchMedia('(prefers-color-scheme: light)').matches;
+        document.documentElement.classList.toggle('light', light);
+    })();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+    const themed = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                colors: {
+                    // "white" is the strong foreground (headings, primary button), "black" its opposite
+                    white: themed('fg'), black: themed('fg-inverse'),
+                    gray: { 100: themed('gray-100'), 200: themed('gray-200'), 300: themed('gray-300'), 400: themed('gray-400'), 500: themed('gray-500') },
+                    ink: { 900: themed('ink-900'), 800: themed('ink-800'), 700: themed('ink-700'), 600: themed('ink-600'), 500: themed('ink-500') },
+                    up: '#3FA36B',
+                }
+            }
+        }
+    }
+</script>
+<style>
+    :root {
+        color-scheme: dark;
+        --fg: 255 255 255; --fg-inverse: 0 0 0;
+        --gray-100: 243 244 246; --gray-200: 229 231 235; --gray-300: 209 213 219; --gray-400: 156 163 175; --gray-500: 107 114 128;
+        --ink-900: 11 12 16; --ink-800: 21 23 30; --ink-700: 30 33 42; --ink-600: 42 46 58; --ink-500: 58 63 77;
+        --positive: #6EE7B7; --negative: #FDA4AF; --warning: #FCD34D;
+    }
+    :root.light {
+        color-scheme: light;
+        --fg: 17 19 24; --fg-inverse: 255 255 255;
+        --gray-100: 31 35 41; --gray-200: 43 47 54; --gray-300: 61 66 75; --gray-400: 95 102 114; --gray-500: 124 131 143;
+        --ink-900: 246 247 249; --ink-800: 255 255 255; --ink-700: 238 240 243; --ink-600: 226 229 234; --ink-500: 201 206 214;
+        --positive: #047857; --negative: #BE123C; --warning: #B45309;
+    }
+    body { background-color: rgb(var(--ink-900)); color: rgb(var(--gray-200)); }
+    .text-emerald-300 { color: var(--positive) !important; }
+    .text-rose-300, .hover\:text-rose-300:hover { color: var(--negative) !important; }
+    .text-amber-300 { color: var(--warning) !important; }
+    .tnum { font-variant-numeric: tabular-nums; }
+    .field { width: 100%; background: rgb(var(--ink-900)); border: 1px solid rgb(var(--ink-600)); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: rgb(var(--fg)); }
+    .field:focus { outline: none; border-color: rgb(var(--gray-500)); }
+    .pill, .tab { padding: 6px 14px; border-radius: 9999px; background: rgb(var(--ink-700)); color: rgb(var(--gray-300)); font-size: 13px; font-weight: 500; }
+    .pill.active, .tab.active { background: rgb(var(--fg)); color: rgb(var(--fg-inverse)); }
+    .thumb { background: #FFFFFF; }
+    :root.light .thumb { box-shadow: inset 0 0 0 1px rgb(var(--ink-600)); }
+    :root.light .shadow-card { box-shadow: 0 1px 2px rgb(0 0 0 / 0.04); }
+</style>

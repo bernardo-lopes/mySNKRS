@@ -76,15 +76,6 @@ def test_parse_product_page():
         "2026-04-03T23:29", "2026-04-03T17:45", "2026-04-03T09:41"]
 
 
-def test_parse_seller_sales_table():
-    text = "Date\tTime\tSize\tSale Price\nOct 25, 2026\t03:51 AM\t11.5W\t$36\nOct 23, 2026\t05:06 PM\t11.5W\t$36\n"
-    sales = parse_stockx_page(text)["sales"]
-    assert sales == [
-        {"sold_at": "2026-10-25T03:51", "price": 36, "size": "11.5W"},
-        {"sold_at": "2026-10-23T17:06", "price": 36, "size": "11.5W"},
-    ]
-
-
 @pytest.mark.parametrize("label, key", [
     ("US W 11.5", "W11.5"), ("US Women's 11.5", "W11.5"), ("11.5W", "W11.5"),
     ("US M 10", "M10"), ("10", "M10"), ("7Y", "Y7"), ("EU 44", None),

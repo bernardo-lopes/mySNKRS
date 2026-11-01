@@ -2,7 +2,7 @@
 Parses StockX product page text (bid, ask, and the Market Data > Sales list) into structured data.
 
 The text comes from the SNKRS sync bookmark (document.body.innerText of the StockX page in your
-own browser) or from a manual copy/paste of the page or of the seller sales table.
+own browser).
 """
 
 import re
@@ -16,11 +16,6 @@ _PRICE = r"\$\s?([\d,]+(?:\.\d+)?)"
 _DATE_HEADER = re.compile(r"^(\d{2})/(\d{2})/(\d{2})$")
 _ROW_PRICE = re.compile(r"^(?:" + _PRICE + r"|--)$")
 _ROW_TIME = re.compile(r"^(\d{1,2}):(\d{2})\s?([AP]M)$")
-
-# Seller sell-page table: "Oct 25, 2026  03:51 AM  11.5W  $36" (tabs or newlines between cells)
-_SELLER_ROW = re.compile(
-    r"([A-Z][a-z]{2} \d{1,2}, \d{4})\s+(\d{1,2}:\d{2}\s?[AP]M)\s+([\w .']+?)\s+" + _PRICE
-)
 
 _BID_PATTERNS = [r"Sell Now for\s*" + _PRICE, r"Highest Bid\s*" + _PRICE, _PRICE + r"\s*Sell Now"]
 _ASK_PATTERNS = [r"Buy Now for\s*" + _PRICE, r"Standard Lowest Ask\s*" + _PRICE, r"Lowest Ask\s*" + _PRICE]
@@ -88,18 +83,10 @@ def _parse_sales_panel(lines: List[str]) -> List[Dict[str, Any]]:
     return sales
 
 
-def _parse_seller_table(text: str) -> List[Dict[str, Any]]:
-    sales = []
-    for date_s, time_s, size_label, price in _SELLER_ROW.findall(text):
-        sold = datetime.strptime(f"{date_s} {time_s.replace(' ', '')}", "%b %d, %Y %I:%M%p")
-        sales.append({"sold_at": sold.strftime("%Y-%m-%dT%H:%M"), "price": _money(price), "size": size_label.strip()})
-    return sales
-
-
 def parse_stockx_page(text: str, title: Optional[str] = None) -> Dict[str, Any]:
     """Extracts SKU, product title, size, highest bid, lowest ask and sales from StockX page text."""
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    sales = _parse_sales_panel(lines) or _parse_seller_table(text)
+    sales = _parse_sales_panel(lines)
 
     sku, product_title = None, None
     if title:

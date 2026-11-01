@@ -3,10 +3,11 @@ FastAPI Web Application for Sneaker Valuation and Multi-Platform Reselling Intel
 """
 
 from fastapi import FastAPI, Request, Form, Query, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from datetime import date
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -19,8 +20,9 @@ from ..storage import SneakerStorage
 from ..stockx_sync import parse_stockx_page, size_aliases, size_key
 from ..stockx_history import RANGE_DAYS, summarize_sales
 from ..inventory import value_inventory
+from ..inventory_export import export_pdf, export_xlsx
 
-app = FastAPI(title="SNKRS - Sneaker Market Price Valuation")
+app = FastAPI(title="mySNKRS - Sneaker Market Price Valuation")
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -121,14 +123,13 @@ class StockXSyncPayload(BaseModel):
     title: Optional[str] = None
     url: Optional[str] = None
     image_url: Optional[str] = None
-    sku: Optional[str] = None
 
 
 @app.post("/api/stockx/sync")
 async def stockx_sync(payload: StockXSyncPayload):
-    """Stores bid, ask and sales parsed from a StockX page (sync bookmark or pasted text)."""
+    """Stores bid, ask and sales parsed from a StockX page sent by the sync bookmark."""
     parsed = parse_stockx_page(payload.text, payload.title)
-    sku = (payload.sku or parsed["sku"] or "").strip().upper()
+    sku = (parsed["sku"] or "").strip().upper()
     if not sku:
         raise HTTPException(400, "Could not find the style code (SKU) on this page.")
 
@@ -202,6 +203,22 @@ class InventoryItemUpdate(BaseModel):
 async def list_inventory(status: str = Query("for_sale", pattern="^(for_sale|sold)$")):
     """Inventory with each pair's current StockX bid, ask, last sale and sell-now net payout."""
     return value_inventory(storage, aggregator.platforms["stockx"], status)
+
+
+@app.get("/api/inventory/export.{fmt}")
+async def export_inventory(fmt: Literal["xlsx", "pdf"], status: str = Query("for_sale", pattern="^(for_sale|sold)$")):
+    """Downloads the inventory as a formatted Excel workbook or PDF."""
+    valuation = value_inventory(storage, aggregator.platforms["stockx"], status)
+    image_cache = Path(storage.db_path).parent / "image_cache"
+    stamp = date.today().isoformat()
+    name = f"mysnkrs-inventory-{'sold-' if status == 'sold' else ''}{stamp}.{fmt}"
+    if fmt == "xlsx":
+        body = export_xlsx(valuation, status, image_cache)
+        media = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    else:
+        body = export_pdf(valuation, status, image_cache)
+        media = "application/pdf"
+    return Response(body, media_type=media, headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 @app.post("/api/inventory")

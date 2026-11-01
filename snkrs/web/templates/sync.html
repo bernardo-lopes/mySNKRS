@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="dark">
-    <meta name="darkreader-lock">
-    <title>SNKRS • StockX Sync</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>body { background-color: #0B0C10; color: #E5E7EB; font-family: ui-sans-serif, system-ui, sans-serif; }</style>
+    <title>mySNKRS • StockX Sync</title>
+    {% include "_theme.html" %}
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
-    <div class="max-w-md w-full bg-[#15171E] border border-[#262A35] rounded-2xl p-6 space-y-3">
+<body class="min-h-screen flex items-center justify-center p-6 font-sans">
+    <div class="max-w-md w-full bg-ink-800 border border-ink-700 rounded-2xl p-6 space-y-3">
         <div class="text-xs uppercase tracking-wider text-gray-500">StockX Sync</div>
         <div id="status" class="text-lg font-semibold text-white">Waiting for StockX…</div>
-        <div id="detail" class="text-sm text-gray-400">Click the SNKRS bookmark on a StockX product page.</div>
-        <a id="openLink" href="/" class="hidden inline-block mt-2 text-sm px-4 py-2 rounded-lg bg-white text-black font-semibold">Open in SNKRS</a>
+        <div id="detail" class="text-sm text-gray-400">Click the ⇅ Sync bookmark on a StockX product page.</div>
+        <a id="openLink" href="/" class="hidden inline-block mt-2 text-sm px-4 py-2 rounded-lg bg-white text-black font-semibold">Open in mySNKRS</a>
     </div>
 
     <script>

@@ -4,3 +4,4 @@ __pycache__/
 .pytest_cache/
 snkrs_data.db
 .DS_Store
+image_cache/

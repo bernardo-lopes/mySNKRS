@@ -3,34 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="dark">
-    <meta name="darkreader-lock">
-    <title>SNKRS • Inventory</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { ink: { 900: '#0B0C10', 800: '#15171E', 700: '#1E212A', 600: '#2A2E3A', 500: '#3A3F4D' } }
-                }
-            }
-        }
-    </script>
+    <title>mySNKRS • Inventory</title>
+    {% include "_theme.html" %}
     <style>
-        :root { color-scheme: dark; }
-        body { background-color: #0B0C10; color: #E5E7EB; }
-        .field { width: 100%; background: #0B0C10; border: 1px solid #2A2E3A; border-radius: 10px; padding: 9px 12px; font-size: 14px; color: #F3F4F6; }
-        .field:focus { outline: none; border-color: #6B7280; }
-        .tnum { font-variant-numeric: tabular-nums; }
+        .field { padding: 9px 12px; }
         .chip { font-size: 11px; padding: 2px 8px; border-radius: 9999px; white-space: nowrap; }
-        .tab { padding: 6px 14px; border-radius: 9999px; background: #1E212A; color: #D1D5DB; font-size: 13px; font-weight: 500; }
-        .tab.active { background: #F3F4F6; color: #0B0C10; }
-        .paid { width: 80px; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px; text-align: right; color: #F3F4F6; }
-        .paid:hover, .paid:focus { border-color: #2A2E3A; outline: none; }
+        .paid { width: 80px; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px; text-align: right; color: rgb(var(--fg)); }
+        .paid:hover, .paid:focus { border-color: rgb(var(--ink-600)); outline: none; }
     </style>
 </head>
 <body class="min-h-screen font-sans">
@@ -38,11 +17,14 @@
     <header class="border-b border-ink-700">
         <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center gap-6 text-sm">
-                <a href="/" class="font-bold tracking-tight text-white">SNKRS</a>
+                <a href="/" class="font-bold tracking-tight text-white">mySNKRS</a>
                 <a href="/" class="text-gray-400 hover:text-white">Check value</a>
                 <a href="/inventory" class="text-white font-medium">Inventory</a>
             </div>
+            <div class="flex items-center gap-2">
+            {% include "_theme_toggle.html" %}
             <button id="addToggle" class="text-xs px-3 py-1.5 rounded-lg bg-white text-black font-semibold hover:bg-gray-200">+ Add pair</button>
+            </div>
         </div>
     </header>
 
@@ -109,7 +91,15 @@
                     <button class="tab active" data-status="for_sale">In stock</button>
                     <button class="tab" data-status="sold">Sold</button>
                 </div>
-                <input id="search" placeholder="Search name, style code or size" class="field max-w-xs">
+                <div class="flex flex-1 sm:flex-none items-center gap-2">
+                    <input id="search" placeholder="Search name, style code or size" class="field sm:w-72">
+                    <a id="exportXlsx" href="/api/inventory/export.xlsx" download title="Download as Excel"
+                       class="flex-shrink-0 flex items-center gap-1.5 text-xs px-3 py-2.5 rounded-[10px] border border-ink-600 text-gray-200 hover:bg-ink-700">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Excel</a>
+                    <a id="exportPdf" href="/api/inventory/export.pdf" download title="Download as PDF"
+                       class="flex-shrink-0 flex items-center gap-1.5 text-xs px-3 py-2.5 rounded-[10px] border border-ink-600 text-gray-200 hover:bg-ink-700">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>PDF</a>
+                </div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm tnum">
@@ -131,7 +121,7 @@
                 </table>
             </div>
             <p class="p-4 text-xs text-gray-500 border-t border-ink-700">
-                Prices come from your StockX syncs. To price a pair: open it on StockX (↗), pick its size, open Market Data › Sales, click the ⇅ SNKRS sync bookmark, then reload this page.
+                Prices come from your StockX syncs. To price a pair: open it on StockX (↗), pick its size, open Market Data › Sales, click the ⇅ Sync bookmark, then reload this page.
                 Net now is the highest bid minus 9% + 3% + $5 shipping, shown only for DS pairs in their original box, since StockX doesn't accept anything else.
             </p>
         </section>
@@ -151,6 +141,8 @@
 
         async function load() {
             data = await (await fetch('/api/inventory?status=' + status)).json();
+            $('exportXlsx').href = '/api/inventory/export.xlsx?status=' + status;
+            $('exportPdf').href = '/api/inventory/export.pdf?status=' + status;
             render();
         }
 
@@ -173,7 +165,7 @@
                 <tr data-id="${i.id}">
                     <td class="py-3 pl-4">
                         <div class="flex items-center gap-3 min-w-[240px]">
-                            <div class="w-11 h-11 rounded-lg bg-white flex-shrink-0 overflow-hidden flex items-center justify-center">
+                            <div class="w-11 h-11 rounded-lg thumb flex-shrink-0 overflow-hidden flex items-center justify-center">
                                 ${i.image_url ? `<img src="${esc(i.image_url)}" alt="" class="w-full h-full object-contain">` : '<span>👟</span>'}
                             </div>
                             <div class="min-w-0">
