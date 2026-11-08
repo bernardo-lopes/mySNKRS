@@ -4,12 +4,12 @@ FastAPI Web Application for Sneaker Valuation and Multi-Platform Reselling Intel
 
 from fastapi import FastAPI, Request, Form, Query, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from datetime import date
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
 from ..models import ConditionGrade, BoxCondition
 from ..size_converter import SizeConverter
@@ -176,6 +176,15 @@ async def stockx_history(
     return result
 
 
+# Inventory notes are one-liners: line breaks become spaces, max 140 characters
+NOTE_MAX = 140
+Note = Annotated[str, Field(max_length=NOTE_MAX)]
+
+
+def _one_line(v: Optional[str]) -> Optional[str]:
+    return " ".join(v.split()) if isinstance(v, str) else v
+
+
 class InventoryItemIn(BaseModel):
     sku: str
     size: str
@@ -183,7 +192,9 @@ class InventoryItemIn(BaseModel):
     condition: ConditionGrade = ConditionGrade.DEADSTOCK
     box_condition: BoxCondition = BoxCondition.ORIGINAL_GOOD
     purchase_price: Optional[float] = None
-    notes: str = ""
+    notes: Note = ""
+
+    _notes_one_line = field_validator("notes", mode="before")(_one_line)
 
 
 class InventoryItemUpdate(BaseModel):
@@ -196,22 +207,27 @@ class InventoryItemUpdate(BaseModel):
     status: Optional[Literal["for_sale", "sold"]] = None
     sold_price: Optional[float] = None
     sold_platform: Optional[str] = None
-    notes: Optional[str] = None
+    notes: Optional[Note] = None
+    favorite: Optional[bool] = None
+
+    _notes_one_line = field_validator("notes", mode="before")(_one_line)
 
 
 @app.get("/api/inventory")
-async def list_inventory(status: str = Query("for_sale", pattern="^(for_sale|sold)$")):
-    """Inventory with each pair's current StockX bid, ask, last sale and sell-now net payout."""
-    return value_inventory(storage, aggregator.platforms["stockx"], status)
+async def list_inventory(status: str = Query("for_sale", pattern="^(for_sale|sold)$"), favorites: bool = False):
+    """Inventory with each pair's current StockX bid, ask, 6-month average and sell-now net payout."""
+    return value_inventory(storage, aggregator.platforms["stockx"], status, favorites)
 
 
 @app.get("/api/inventory/export.{fmt}")
-async def export_inventory(fmt: Literal["xlsx", "pdf"], status: str = Query("for_sale", pattern="^(for_sale|sold)$")):
+async def export_inventory(
+    fmt: Literal["xlsx", "pdf"], status: str = Query("for_sale", pattern="^(for_sale|sold)$"), favorites: bool = False,
+):
     """Downloads the inventory as a formatted Excel workbook or PDF."""
-    valuation = value_inventory(storage, aggregator.platforms["stockx"], status)
+    valuation = value_inventory(storage, aggregator.platforms["stockx"], status, favorites)
     image_cache = Path(storage.db_path).parent / "image_cache"
     stamp = date.today().isoformat()
-    name = f"mysnkrs-inventory-{'sold-' if status == 'sold' else ''}{stamp}.{fmt}"
+    name = f"mysnkrs-inventory-{'sold-' if status == 'sold' else ''}{'favorites-' if favorites else ''}{stamp}.{fmt}"
     if fmt == "xlsx":
         body = export_xlsx(valuation, status, image_cache)
         media = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

@@ -90,6 +90,10 @@ class SneakerStorage:
                     UNIQUE (sku, size_key, sold_at, price)
                 )
             """)
+            # Columns added after the first release
+            inventory_cols = {r[1] for r in conn.execute("PRAGMA table_info(inventory)")}
+            if "favorite" not in inventory_cols:
+                conn.execute("ALTER TABLE inventory ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
             conn.commit()
 
     def save_evaluation(self, report: ValuationReport) -> int:
@@ -167,7 +171,7 @@ class SneakerStorage:
 
     INVENTORY_EDITABLE = (
         "sku", "model_name", "size", "condition", "box_condition",
-        "purchase_price", "target_price", "status", "sold_price", "sold_platform", "notes",
+        "purchase_price", "target_price", "status", "sold_price", "sold_platform", "notes", "favorite",
     )
 
     def update_inventory_item(self, item_id: int, fields: Dict[str, Any]) -> bool:

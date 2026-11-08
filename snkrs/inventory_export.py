@@ -1,6 +1,7 @@
 """
 Inventory export to Excel (.xlsx) and PDF, laid out like the inventory page: one row per pair with
-its photo, condition, what you paid, and current StockX bid, ask, last sale and net payout.
+its photo, condition, current StockX bid, ask, 6-month average sale, last sale and net payout.
+The Excel file also keeps what you paid, so profit can be recalculated there.
 """
 
 import hashlib
@@ -30,7 +31,8 @@ BOX_LABELS = {
     "original_good": "Original", "original_damaged": "Damaged", "replacement": "Not original", "no_box": "No box",
 }
 STATUS_LABELS = {"for_sale": "In stock", "sold": "Sold"}
-FEE_NOTE = ("Net if sold now = highest StockX bid minus 9% transaction fee, 3% payment processing and $5 shipping. "
+FEE_NOTE = ("Net if sold now = highest StockX bid minus 9% transaction fee, 3% payment processing and $5 shipping; "
+            "net at ask applies the same fees to the lowest ask. "
             "Shown only for DS pairs in their original box, since StockX accepts nothing else. "
             "Prices come from your last StockX sync of each pair.")
 
@@ -86,14 +88,19 @@ def _rows(items: List[Dict[str, Any]], status: str) -> List[Dict[str, Any]]:
             "size": i["size"],
             "condition": CONDITION_LABELS.get(i["condition"], i["condition"]),
             "box": BOX_LABELS.get(i["box_condition"], i["box_condition"]),
+            "favorite": "★" if i.get("favorite") else "",
             "paid": i["purchase_price"],
             "bid": i["highest_bid"],
             "ask": i["lowest_ask"],
+            "ask_net": i.get("lowest_ask_net_payout"),
+            "avg_6m": i.get("avg_sale_6m"),
+            "units_6m": i.get("units_sold_6m") if i["synced"] else None,
             "last_sale": i["last_sale"],
             "last_sale_date": _short_date(i["last_sale_date"]),
             "net": i.get("sold_price") if sold else i["net_payout_now"],
             "profit": profit,
             "note": (i.get("sold_platform") or "") if sold else ("" if i["stockx_eligible"] else "Not accepted on StockX"),
+            "my_note": i.get("notes") or "",
         })
     return rows
 
@@ -103,11 +110,13 @@ def _columns(status: str):
     note_label = "Sold on" if status == "sold" else "Note"
     # key, header, width (Excel chars), is money
     return [
-        ("photo", "", 12, False), ("name", "Sneaker", 40, False), ("sku", "Style code", 14, False),
-        ("size", "Size", 11, False), ("condition", "Condition", 13, False), ("box", "Box", 12, False),
-        ("paid", "Paid", 11, True), ("bid", "Highest bid", 12, True), ("ask", "Lowest ask", 12, True),
-        ("last_sale", "Last sale", 11, True), ("last_sale_date", "Sale date", 13, False),
+        ("photo", "", 12, False), ("favorite", "★", 5, False), ("name", "Sneaker", 40, False),
+        ("sku", "Style code", 14, False), ("size", "Size", 11, False), ("condition", "Condition", 13, False),
+        ("box", "Box", 12, False), ("paid", "Paid", 11, True), ("bid", "Highest bid", 12, True),
+        ("ask", "Lowest ask", 12, True), ("ask_net", "Net at ask", 12, True), ("avg_6m", "Avg sale 6M", 12, True),
+        ("units_6m", "Sold 6M", 9, False), ("last_sale", "Last sale", 11, True), ("last_sale_date", "Sale date", 13, False),
         ("net", net_label, 15, True), ("profit", "Profit", 11, True), ("note", note_label, 22, False),
+        ("my_note", "My note", 36, False),
     ]
 
 
@@ -164,7 +173,12 @@ def export_xlsx(valuation: Dict[str, Any], status: str, image_cache: Path) -> by
                                        wrap_text=key == "name", indent=0 if is_money else 1)
             cell.border = Border(bottom=thin)
             cell.font = Font(size=10, color=INK, bold=key in ("name", "net"))
-            if key in ("sku", "last_sale_date", "note"):
+            if key == "favorite":
+                cell.font = Font(size=12, color="F5B301")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            if key == "my_note":
+                cell.alignment = Alignment(vertical="center", wrap_text=True, indent=1)
+            if key in ("sku", "last_sale_date", "note", "my_note"):
                 cell.font = Font(size=9, color=MUTED)
             if is_money:
                 cell.number_format = money
@@ -181,7 +195,7 @@ def export_xlsx(valuation: Dict[str, Any], status: str, image_cache: Path) -> by
     # Totals row with live formulas, so edits in Excel still add up
     first, last = header_row + 1, header_row + len(rows)
     total_row = last + 1
-    ws.cell(row=total_row, column=2, value="Total").font = Font(bold=True, color=INK)
+    ws.cell(row=total_row, column=3, value="Total").font = Font(bold=True, color=INK)
     for c, (key, _, _, _) in enumerate(cols, start=1):
         if key in ("paid", "net", "profit"):
             letter = get_column_letter(c)
@@ -193,13 +207,13 @@ def export_xlsx(valuation: Dict[str, Any], status: str, image_cache: Path) -> by
         ws.cell(row=total_row, column=c).border = Border(top=Side(style="medium", color=INK))
     ws.row_dimensions[total_row].height = 24
 
-    note = ws.cell(row=total_row + 2, column=2, value=FEE_NOTE)
+    note = ws.cell(row=total_row + 2, column=3, value=FEE_NOTE)
     note.font = Font(size=9, italic=True, color=MUTED)
-    ws.merge_cells(start_row=total_row + 2, start_column=2, end_row=total_row + 2, end_column=len(cols))
+    ws.merge_cells(start_row=total_row + 2, start_column=3, end_row=total_row + 2, end_column=len(cols))
     note.alignment = Alignment(wrap_text=True, vertical="top")
     ws.row_dimensions[total_row + 2].height = 30
 
-    ws.freeze_panes = ws.cell(row=header_row + 1, column=3)
+    ws.freeze_panes = ws.cell(row=header_row + 1, column=4)
     if rows:
         ws.auto_filter.ref = f"B{header_row}:{last_col}{last}"
     ws.print_title_rows = f"{header_row}:{header_row}"
@@ -259,10 +273,10 @@ def export_pdf(valuation: Dict[str, Any], status: str, image_cache: Path) -> byt
     ]))
     story += [tile_table, Spacer(1, 14)]
 
-    # Main table: photo · sneaker (name + code) · size · condition · paid · bid · ask · last sale · net · profit
-    headers = ["", "Sneaker", "Size", "Condition", "Paid", "Bid", "Ask", "Last sale",
-               "Sold for" if status == "sold" else "Net now", "Profit"]
-    widths = [0.75, 3.05, 0.95, 1.05, 0.6, 0.6, 0.6, 0.85, 0.75, 0.7]
+    # Main table, like the inventory page: photo · sneaker · size · condition · net now · ask · 6M avg · last sale · profit
+    headers = ["", "Sneaker", "Size", "Condition", "Sold for" if status == "sold" else "Net now",
+               "Lowest ask", "Avg sale 6M", "Last sale", "Profit"]
+    widths = [0.75, 3.15, 0.95, 1.05, 0.85, 0.85, 0.85, 0.85, 0.7]
     scale = doc.width / (sum(widths) * inch)
     widths = [w * inch * scale for w in widths]
 
@@ -274,23 +288,33 @@ def export_pdf(valuation: Dict[str, Any], status: str, image_cache: Path) -> byt
         if thumb:
             w, h = PILImage.open(thumb).size
             photo = RLImage(str(thumb), width=0.62 * inch, height=0.62 * inch * h / w)
-        sneaker = [Paragraph(_escape(r["name"]), name_style), Paragraph(_escape(r["sku"]), sub_style)]
+        star = '<font color="#F5B301">★</font> ' if r["favorite"] else ""
+        sneaker = [Paragraph(star + _escape(r["name"]), name_style), Paragraph(_escape(r["sku"]), sub_style)]
+        if r["my_note"]:
+            sneaker.append(Paragraph(f'<i>{_escape(r["my_note"])}</i>', sub_style))
         condition = [Paragraph(r["condition"], cell_style)]
         if r["box"] != "Original":
             condition.append(Paragraph(f"{r['box']} box" if r["box"] != "No box" else "No box", sub_style))
-        last = [Paragraph(_money(r["last_sale"]), ParagraphStyle("r", parent=cell_style, alignment=2))]
-        if r["last_sale_date"]:
-            last.append(Paragraph(r["last_sale_date"], ParagraphStyle("rs", parent=sub_style, alignment=2)))
-        net = _money(r["net"]) if r["net"] is not None else ""
-        if r["net"] is None and r["note"] and status != "sold":
-            net = Paragraph("Not on StockX", ParagraphStyle("ns", parent=sub_style, alignment=2))
-        data.append([photo, sneaker, r["size"], condition, _money(r["paid"]), _money(r["bid"]), _money(r["ask"]),
-                     last, net, _money(r["profit"])])
-        if r["profit"]:
-            profit_colors.append(("TEXTCOLOR", (9, n), (9, n), colors.HexColor("#" + (POSITIVE if r["profit"] > 0 else NEGATIVE))))
+        right, right_bold = ParagraphStyle("r", parent=cell_style, alignment=2), ParagraphStyle("rb", parent=name_style, alignment=2)
+        right_sub = ParagraphStyle("rs", parent=sub_style, alignment=2)
 
-    data.append(["", Paragraph("Total", name_style), "", "", _money(paid_total) if paid_total else "–", "", "", "",
-                 _money(net_total), _money(sum(profits)) if profits else "–"])
+        def stacked(main, sub, style=right):
+            return [Paragraph(main, style)] + ([Paragraph(sub, right_sub)] if sub else [])
+
+        last = stacked(_money(r["last_sale"]), r["last_sale_date"])
+        if r["net"] is None and r["note"] and status != "sold":
+            net = [Paragraph("Not on StockX", right_sub)]
+        else:
+            net = stacked(_money(r["net"]) if r["net"] is not None else "–",
+                          f"bid {_money(r['bid'])}" if status != "sold" and r["bid"] is not None else "", right_bold)
+        ask = stacked(_money(r["ask"]), f"{_money(r['ask_net'])} net" if r["ask_net"] is not None else "")
+        avg = stacked(_money(r["avg_6m"]), f"{r['units_6m']} sold" if r["units_6m"] is not None else "")
+        data.append([photo, sneaker, r["size"], condition, net, ask, avg, last, _money(r["profit"])])
+        if r["profit"]:
+            profit_colors.append(("TEXTCOLOR", (8, n), (8, n), colors.HexColor("#" + (POSITIVE if r["profit"] > 0 else NEGATIVE))))
+
+    data.append(["", Paragraph("Total", name_style), "", "", _money(net_total), "", "", "",
+                 _money(sum(profits)) if profits else "–"])
 
     table = Table(data, colWidths=widths, repeatRows=1)
     style = [
@@ -299,7 +323,7 @@ def export_pdf(valuation: Dict[str, Any], status: str, image_cache: Path) -> byt
         ("BACKGROUND", (0, 0), (-1, 0), ink),
         ("FONT", (0, 1), (-1, -1), "Helvetica", 8.5),
         ("TEXTCOLOR", (0, 1), (-1, -1), ink),
-        ("FONT", (8, 1), (8, -1), "Helvetica-Bold", 8.5),
+        ("FONT", (4, 1), (4, -1), "Helvetica-Bold", 8.5),
         ("ALIGN", (4, 0), (-1, -1), "RIGHT"),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5),

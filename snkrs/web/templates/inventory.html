@@ -8,8 +8,15 @@
     <style>
         .field { padding: 9px 12px; }
         .chip { font-size: 11px; padding: 2px 8px; border-radius: 9999px; white-space: nowrap; }
-        .paid { width: 80px; background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 2px 6px; text-align: right; color: rgb(var(--fg)); }
-        .paid:hover, .paid:focus { border-color: rgb(var(--ink-600)); outline: none; }
+        .fav { font-size: 16px; line-height: 1; color: rgb(var(--gray-500)); }
+        .fav:hover { color: rgb(var(--gray-300)); }
+        .fav.on { color: #F5B301; }
+        .tab.fav-filter.active { background: #F5B301; color: #111318; }
+        .note { font-size: 12px; color: rgb(var(--gray-300)); max-width: 280px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .note:hover { color: rgb(var(--fg)); }
+        .note.empty { color: rgb(var(--gray-500)); opacity: 0; }
+        tr:hover .note.empty, .note.empty:focus { opacity: 1; }
+        .note-input { width: 280px; font-size: 12px; padding: 2px 6px; border-radius: 6px; background: rgb(var(--ink-900)); border: 1px solid rgb(var(--gray-500)); color: rgb(var(--fg)); outline: none; }
     </style>
 </head>
 <body class="min-h-screen font-sans">
@@ -54,7 +61,8 @@
                 </select>
             </label>
             <label class="text-xs text-gray-400 space-y-1"><span>Paid ($)</span><input name="purchase_price" type="number" step="0.01" min="0" placeholder="optional" class="field"></label>
-            <div class="col-span-2 md:col-span-5 flex justify-end gap-2">
+            <label class="col-span-2 md:col-span-3 text-xs text-gray-400 space-y-1"><span>Note</span><input name="notes" maxlength="140" placeholder="optional, e.g. Bought at Footpatrol, small scuff on left toe" class="field"></label>
+            <div class="col-span-2 md:col-span-2 flex justify-end gap-2">
                 <button type="button" id="addCancel" class="px-4 py-2 rounded-lg text-sm text-gray-300 hover:bg-ink-700">Cancel</button>
                 <button type="submit" class="px-4 py-2 rounded-lg text-sm bg-white text-black font-semibold hover:bg-gray-200">Add to inventory</button>
             </div>
@@ -75,7 +83,7 @@
             <div class="rounded-xl bg-ink-800 border border-ink-700 p-4">
                 <div class="text-xs text-gray-400">Paid</div>
                 <div id="tPaid" class="text-2xl font-bold text-white tnum mt-1">–</div>
-                <div class="text-xs text-gray-500 mt-1">Click a price in the list to edit it</div>
+                <div class="text-xs text-gray-500 mt-1">Edit with "Paid" on each row</div>
             </div>
             <div class="rounded-xl bg-ink-800 border border-ink-700 p-4">
                 <div class="text-xs text-gray-400">Profit if sold now</div>
@@ -90,9 +98,10 @@
                 <div class="flex gap-2">
                     <button class="tab active" data-status="for_sale">In stock</button>
                     <button class="tab" data-status="sold">Sold</button>
+                    <button id="favFilter" class="tab fav-filter" title="Show only favorites">★ Favorites</button>
                 </div>
                 <div class="flex flex-1 sm:flex-none items-center gap-2">
-                    <input id="search" placeholder="Search name, style code or size" class="field sm:w-72">
+                    <input id="search" placeholder="Search name, style code, size or note" class="field sm:w-72">
                     <a id="exportXlsx" href="/api/inventory/export.xlsx" download title="Download as Excel"
                        class="flex-shrink-0 flex items-center gap-1.5 text-xs px-3 py-2.5 rounded-[10px] border border-ink-600 text-gray-200 hover:bg-ink-700">
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>Excel</a>
@@ -105,15 +114,15 @@
                 <table class="w-full text-sm tnum">
                     <thead class="text-xs text-gray-400">
                         <tr class="border-b border-ink-700">
-                            <th class="text-left font-medium py-2 pl-4">Sneaker</th>
+                            <th class="w-10 pl-4"></th>
+                            <th class="text-left font-medium py-2">Sneaker</th>
                             <th class="text-left font-medium">Size</th>
                             <th class="text-left font-medium">Condition</th>
-                            <th class="text-right font-medium">Paid</th>
-                            <th class="text-right font-medium">Bid</th>
-                            <th class="text-right font-medium">Last sale</th>
-                            <th class="text-right font-medium">Net now</th>
-                            <th class="text-right font-medium">Profit</th>
-                            <th class="text-left font-medium pl-4">StockX data</th>
+                            <th class="text-right font-medium">Net if you sell now</th>
+                            <th class="text-right font-medium pl-4">Lowest ask</th>
+                            <th class="text-right font-medium pl-4">Avg sale · 6M</th>
+                            <th class="text-right font-medium pl-4">Last sale</th>
+                            <th class="text-right font-medium pl-4">Profit</th>
                             <th class="pr-4"></th>
                         </tr>
                     </thead>
@@ -122,7 +131,7 @@
             </div>
             <p class="p-4 text-xs text-gray-500 border-t border-ink-700">
                 Prices come from your StockX syncs. To price a pair: open it on StockX (↗), pick its size, open Market Data › Sales, click the ⇅ Sync bookmark, then reload this page.
-                Net now is the highest bid minus 9% + 3% + $5 shipping, shown only for DS pairs in their original box, since StockX doesn't accept anything else.
+                Net if you sell now is the highest bid minus 9% + 3% + $5 shipping; under the lowest ask is the net if you list at that price. Both show only for DS pairs in their original box, since StockX doesn't accept anything else.
             </p>
         </section>
     </main>
@@ -138,11 +147,15 @@
         const BOX = { original_damaged: 'Damaged box', replacement: 'Not original box', no_box: 'No box' };
 
         let status = 'for_sale', data = { items: [], totals: {} };
+        let favoritesOnly = false;
+        try { favoritesOnly = localStorage.getItem('snkrs-favorites-only') === '1'; } catch (e) {}
 
         async function load() {
-            data = await (await fetch('/api/inventory?status=' + status)).json();
-            $('exportXlsx').href = '/api/inventory/export.xlsx?status=' + status;
-            $('exportPdf').href = '/api/inventory/export.pdf?status=' + status;
+            const q = `?status=${status}${favoritesOnly ? '&favorites=true' : ''}`;
+            $('favFilter').classList.toggle('active', favoritesOnly);
+            data = await (await fetch('/api/inventory' + q)).json();
+            $('exportXlsx').href = '/api/inventory/export.xlsx' + q;
+            $('exportPdf').href = '/api/inventory/export.pdf' + q;
             render();
         }
 
@@ -158,57 +171,62 @@
 
             const q = $('search').value.trim().toLowerCase();
             const items = data.items
-                .filter(i => !q || `${i.title} ${i.sku} ${i.size}`.toLowerCase().includes(q))
+                .filter(i => !q || `${i.title} ${i.sku} ${i.size} ${i.notes || ''}`.toLowerCase().includes(q))
                 .sort((a, b) => (b.net_payout_now ?? -1) - (a.net_payout_now ?? -1) || (b.synced - a.synced));
 
             $('rows').innerHTML = items.map(i => `
                 <tr data-id="${i.id}">
-                    <td class="py-3 pl-4">
+                    <td class="pl-4"><button class="fav act-fav ${i.favorite ? 'on' : ''}" title="${i.favorite ? 'Remove from favorites' : 'Mark as favorite'}" aria-pressed="${i.favorite}">${i.favorite ? '★' : '☆'}</button></td>
+                    <td class="py-3">
                         <div class="flex items-center gap-3 min-w-[240px]">
                             <div class="w-11 h-11 rounded-lg thumb flex-shrink-0 overflow-hidden flex items-center justify-center">
                                 ${i.image_url ? `<img src="${esc(i.image_url)}" alt="" class="w-full h-full object-contain">` : '<span>👟</span>'}
                             </div>
                             <div class="min-w-0">
                                 <a href="/?sku=${encodeURIComponent(i.sku)}&size=${encodeURIComponent(i.size)}" class="block text-white font-medium truncate max-w-[280px] hover:underline" title="${esc(i.title)}">${esc(i.title)}</a>
-                                <div class="text-xs text-gray-500 font-mono">${esc(i.sku)}</div>
+                                <div class="text-xs text-gray-500"><span class="font-mono">${esc(i.sku)}</span>
+                                    <a href="${esc(i.stockx_url)}" target="_blank" rel="noopener noreferrer" class="ml-1 text-gray-400 hover:text-white" title="Open on StockX">StockX ↗</a></div>
+                                <button class="note act-note ${i.notes ? '' : 'empty'} mt-0.5 block" title="${i.notes ? esc(i.notes) + ' (click to edit)' : 'Add a note'}">${i.notes ? '✎ ' + esc(i.notes) : '+ Add note'}</button>
                             </div>
                         </div>
                     </td>
                     <td class="whitespace-nowrap">${esc(i.size)}</td>
                     <td><div class="flex flex-col items-start gap-1">${condChip(i.condition)}${BOX[i.box_condition] ? `<span class="chip bg-ink-700 text-gray-300">${BOX[i.box_condition]}</span>` : ''}</div></td>
-                    <td class="text-right"><input class="paid tnum" type="number" step="0.01" min="0" placeholder="–" value="${i.purchase_price ?? ''}" aria-label="Purchase price"></td>
-                    <td class="text-right">${usd(i.highest_bid)}</td>
-                    <td class="text-right">${usd(i.last_sale)}${i.last_sale_date ? `<div class="text-[11px] text-gray-500">${fmtDate(i.last_sale_date)}</div>` : ''}</td>
-                    <td class="text-right font-semibold text-white">${i.net_payout_now != null ? usd(i.net_payout_now) : (i.synced && !i.stockx_eligible ? '<span class="text-xs font-normal text-gray-500">Not on StockX</span>' : '–')}</td>
-                    <td class="text-right ${i.profit_now > 0 ? 'text-emerald-300' : i.profit_now < 0 ? 'text-rose-300' : ''}">${usd(i.profit_now)}</td>
-                    <td class="pl-4 whitespace-nowrap text-xs">
-                        ${i.synced ? `<span class="text-gray-300">Synced ${fmtDate(i.synced_at)}</span>` : '<span class="text-gray-500">Not synced</span>'}
-                        <a href="${esc(i.stockx_url)}" target="_blank" rel="noopener noreferrer" class="ml-1 text-gray-400 hover:text-white">↗</a>
+                    <td class="text-right">
+                        <div class="font-semibold text-white">${i.net_payout_now != null ? usd(i.net_payout_now) : (i.synced && !i.stockx_eligible ? '<span class="text-xs font-normal text-gray-500">Not on StockX</span>' : (i.synced ? '–' : '<span class="text-xs font-normal text-gray-500">Not synced</span>'))}</div>
+                        ${i.highest_bid != null ? `<div class="text-[11px] text-gray-500">bid ${usd(i.highest_bid)}</div>` : ''}
                     </td>
-                    <td class="pr-4 text-right whitespace-nowrap text-xs">
+                    <td class="text-right pl-4">${usd(i.lowest_ask)}${i.lowest_ask_net_payout != null ? `<div class="text-[11px] text-gray-500">${usd(i.lowest_ask_net_payout)} net</div>` : ''}</td>
+                    <td class="text-right pl-4">${usd(i.avg_sale_6m)}${i.synced ? `<div class="text-[11px] text-gray-500">${i.units_sold_6m} sold</div>` : ''}</td>
+                    <td class="text-right pl-4">${usd(i.last_sale)}${i.last_sale_date ? `<div class="text-[11px] text-gray-500">${fmtDate(i.last_sale_date)}</div>` : ''}</td>
+                    <td class="text-right pl-4 ${i.profit_now > 0 ? 'text-emerald-300' : i.profit_now < 0 ? 'text-rose-300' : ''}">${usd(i.profit_now)}</td>
+                    <td class="pr-4 pl-4 text-right whitespace-nowrap text-xs">
+                        <button class="act-paid text-gray-400 hover:text-white" title="What you paid: ${i.purchase_price != null ? usd(i.purchase_price) : 'not set'}">Paid</button>
                         ${status === 'for_sale'
-                            ? `<button class="act-sold text-gray-400 hover:text-white">Sold</button>`
+                            ? `<button class="act-sold ml-3 text-gray-400 hover:text-white">Sold</button>`
                             : `<span class="text-gray-400">${usd(i.sold_price)}${i.sold_platform ? ' · ' + esc(i.sold_platform) : ''}</span> <button class="act-unsold ml-2 text-gray-400 hover:text-white">Undo</button>`}
                         <button class="act-del ml-3 text-gray-500 hover:text-rose-300">Remove</button>
                     </td>
-                </tr>`).join('') || `<tr><td colspan="10" class="py-10 text-center text-gray-500">${status === 'sold' ? 'No sold pairs yet' : 'No pairs yet. Use + Add pair.'}</td></tr>`;
+                </tr>`).join('') || `<tr><td colspan="10" class="py-10 text-center text-gray-500">${favoritesOnly ? 'No favorites here yet. Tap ☆ on a pair to add it.' : status === 'sold' ? 'No sold pairs yet' : 'No pairs yet. Use + Add pair.'}</td></tr>`;
         }
 
         const patch = (id, body) => fetch('/api/inventory/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-
-        $('rows').addEventListener('change', async (e) => {
-            if (!e.target.classList.contains('paid')) return;
-            const id = e.target.closest('tr').dataset.id;
-            const v = e.target.value === '' ? null : Number(e.target.value);
-            await patch(id, { purchase_price: v });
-            load();
-        });
 
         $('rows').addEventListener('click', async (e) => {
             const row = e.target.closest('tr'); if (!row) return;
             const id = row.dataset.id;
             const item = data.items.find(i => String(i.id) === id);
-            if (e.target.classList.contains('act-sold')) {
+            if (e.target.classList.contains('act-note')) {
+                editNote(e.target, item);
+            } else if (e.target.classList.contains('act-fav')) {
+                await patch(id, { favorite: !item.favorite });
+                load();
+            } else if (e.target.classList.contains('act-paid')) {
+                const price = prompt(`What did you pay for "${item.title}" ($)? Leave empty to clear.`, item.purchase_price ?? '');
+                if (price === null) return;
+                await patch(id, { purchase_price: price === '' ? null : Number(price) });
+                load();
+            } else if (e.target.classList.contains('act-sold')) {
                 const price = prompt(`Sold "${item.title}" for how much ($)?`, item.net_payout_now ?? '');
                 if (price === null) return;
                 const platform = prompt('Where did it sell?', 'StockX');
@@ -224,11 +242,39 @@
             }
         });
 
-        document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+        // Inline one-line note: Enter or leaving the field saves, Esc cancels
+        function editNote(button, item) {
+            const input = Object.assign(document.createElement('input'), {
+                className: 'note-input mt-0.5', value: item.notes || '', maxLength: 140, placeholder: 'One-line note',
+            });
+            input.setAttribute('aria-label', 'Note');
+            button.replaceWith(input);
+            input.focus();
+            input.select();
+            let done = false;
+            const finish = async (save) => {
+                if (done) return; done = true;
+                const notes = input.value.trim();
+                if (save && notes !== (item.notes || '')) await patch(item.id, { notes });
+                save ? load() : render();
+            };
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') finish(true);
+                if (e.key === 'Escape') finish(false);
+            });
+            input.addEventListener('blur', () => finish(true));
+        }
+
+        document.querySelectorAll('.tab[data-status]').forEach(t => t.addEventListener('click', () => {
             status = t.dataset.status;
-            document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+            document.querySelectorAll('.tab[data-status]').forEach(x => x.classList.toggle('active', x === t));
             load();
         }));
+        $('favFilter').addEventListener('click', () => {
+            favoritesOnly = !favoritesOnly;
+            try { localStorage.setItem('snkrs-favorites-only', favoritesOnly ? '1' : '0'); } catch (e) {}
+            load();
+        });
         $('search').addEventListener('input', render);
 
         const toggleAdd = (show) => $('addForm').classList.toggle('hidden', !show);
@@ -239,6 +285,7 @@
             const f = Object.fromEntries(new FormData(e.target));
             f.purchase_price = f.purchase_price === '' ? null : Number(f.purchase_price);
             if (!f.model_name) delete f.model_name;
+            f.notes = (f.notes || '').trim();
             const res = await fetch('/api/inventory', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f) });
             if (!res.ok) { alert('Could not add: ' + ((await res.json()).detail || res.status)); return; }
             e.target.reset(); toggleAdd(false); load();
