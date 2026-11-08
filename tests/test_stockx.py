@@ -66,6 +66,8 @@ def test_parse_product_page():
     assert r["sku"] == "FD2596-700"
     assert r["title"] == "Jordan 1 Retro High OG Reverse Laney (Women's)"
     assert (r["highest_bid"], r["lowest_ask"]) == (63, 102)
+    assert r["retail_price"] == 180
+    assert (r["model"], r["colorway"]) == ("Jordan 1 Retro High OG", "Reverse Laney (Women's)")
     assert size_key(r["size"]) == "W11.5"
     # 50 rows on the page, 2 with hidden prices ("--")
     assert len(r["sales"]) == 48
@@ -100,6 +102,8 @@ def test_sync_then_evaluate_and_history():
     assert sx["payout_breakdown"] == {"price": 63, "transaction_fee": 5.67, "processing_fee": 1.89, "shipping": 5.0, "payout": 50.44}
     assert sx["lowest_ask_net_payout"] == 84.76
     assert data["model_name"] == "Jordan 1 Retro High OG Reverse Laney (Women's)"
+    assert data["retail_price"] == 180
+    assert data["marketplace_links"]["stockx"]["url"] == "https://stockx.com/air-jordan-1-retro-high-og-reverse-laney-w?size=11.5W"
 
     h = client.get("/api/stockx/history", params={"sku": "FD2596-700", "size": "US W 11.5", "range": "3y"}).json()
     assert (h["units_sold"], h["sales_on_file"], h["oldest_sale"]) == (48, 48, "2025-10-30T06:51")

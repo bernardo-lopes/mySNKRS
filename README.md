@@ -74,6 +74,33 @@ Features included in the Web UI:
 
 ---
 
+### Run it on your own server (with Tailscale)
+
+```bash
+git clone <this repo> snkrs && cd snkrs
+python3 -m venv venv && ./venv/bin/pip install -r requirements.txt
+```
+
+**Bring your data.** Your data isn't in the repo. Copy your backup into the repo folder:
+`snkrs_data.db` and the `image_cache/` folder (or set `SNKRS_DB_PATH=/path/to/snkrs_data.db`;
+the image cache is read from the folder next to the database).
+
+**Start it and share it on your tailnet:**
+
+```bash
+PYTHONPATH=. ./venv/bin/python -m snkrs.cli web --port 8000
+tailscale serve --bg 8000
+```
+
+Open the printed `https://<server>.<tailnet>.ts.net` address in Chrome on your computer, and
+drag the **⇅ Sync** button to your bookmarks bar again: the bookmark sends StockX data to the
+address you dragged it from. Enter the same address in the Android app's Settings. To keep the
+server running after you log out or reboot, run the first command under systemd (or tmux).
+
+The Android app is in [`android/`](android/README.md).
+
+---
+
 ### 3. Command Line Interface (CLI)
 
 #### Instant Valuation:

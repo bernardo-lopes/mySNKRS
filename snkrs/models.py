@@ -85,6 +85,8 @@ class PlatformSummary(BaseModel):
     product_title: Optional[str] = None
     image_url: Optional[str] = None
     product_url: Optional[str] = None
+    retail_price: Optional[float] = None
+    product_model: Optional[str] = None
     size_key: Optional[str] = None
     size_label: Optional[str] = None
     synced_at: Optional[str] = None

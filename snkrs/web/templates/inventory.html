@@ -7,7 +7,6 @@
     {% include "_theme.html" %}
     <style>
         .field { padding: 9px 12px; }
-        .chip { font-size: 11px; padding: 2px 8px; border-radius: 9999px; white-space: nowrap; }
         .fav { font-size: 16px; line-height: 1; color: rgb(var(--gray-500)); }
         .fav:hover { color: rgb(var(--gray-300)); }
         .fav.on { color: #F5B301; }
@@ -130,7 +129,7 @@
                 </table>
             </div>
             <p class="p-4 text-xs text-gray-500 border-t border-ink-700">
-                Prices come from your StockX syncs. To price a pair: open it on StockX (↗), pick its size, open Market Data › Sales, click the ⇅ Sync bookmark, then reload this page.
+                Prices come from your StockX syncs. To price a pair: open it here, click Open on StockX, pick its size, open Market Data › Sales, click the ⇅ Sync bookmark, then reload this page.
                 Net if you sell now is the highest bid minus 9% + 3% + $5 shipping; under the lowest ask is the net if you list at that price. Both show only for DS pairs in their original box, since StockX doesn't accept anything else.
             </p>
         </section>
@@ -183,9 +182,8 @@
                                 ${i.image_url ? `<img src="${esc(i.image_url)}" alt="" class="w-full h-full object-contain">` : '<span>👟</span>'}
                             </div>
                             <div class="min-w-0">
-                                <a href="/?sku=${encodeURIComponent(i.sku)}&size=${encodeURIComponent(i.size)}" class="block text-white font-medium truncate max-w-[280px] hover:underline" title="${esc(i.title)}">${esc(i.title)}</a>
-                                <div class="text-xs text-gray-500"><span class="font-mono">${esc(i.sku)}</span>
-                                    <a href="${esc(i.stockx_url)}" target="_blank" rel="noopener noreferrer" class="ml-1 text-gray-400 hover:text-white" title="Open on StockX">StockX ↗</a></div>
+                                <a href="/?${new URLSearchParams({ sku: i.sku, size: i.size, condition: i.condition, box_condition: i.box_condition, item: i.id })}" class="block text-white font-medium truncate max-w-[280px] hover:underline" title="${esc(i.title)}">${esc(i.title)}</a>
+                                <div class="text-xs text-gray-500 font-mono">${esc(i.sku)}</div>
                                 <button class="note act-note ${i.notes ? '' : 'empty'} mt-0.5 block" title="${i.notes ? esc(i.notes) + ' (click to edit)' : 'Add a note'}">${i.notes ? '✎ ' + esc(i.notes) : '+ Add note'}</button>
                             </div>
                         </div>
@@ -291,8 +289,9 @@
             e.target.reset(); toggleAdd(false); load();
         });
 
-        // Prefill from "Add to inventory" on the value page
+        // Prefill from "Add to inventory" or "In inventory" on the value page
         const params = new URLSearchParams(location.search);
+        if (params.get('q')) $('search').value = params.get('q');
         if (params.get('add')) {
             const form = $('addForm');
             for (const k of ['sku', 'model_name', 'size', 'condition', 'box_condition']) if (params.get(k)) form.elements[k].value = params.get(k);

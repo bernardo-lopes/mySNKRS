@@ -21,6 +21,7 @@ from ..stockx_sync import parse_stockx_page, size_aliases, size_key
 from ..stockx_history import RANGE_DAYS, summarize_sales
 from ..inventory import value_inventory
 from ..inventory_export import export_pdf, export_xlsx
+from ..marketplace_links import marketplace_links
 
 app = FastAPI(title="mySNKRS - Sneaker Market Price Valuation")
 
@@ -109,7 +110,15 @@ async def evaluate_sneaker(
     # Save to history
     storage.save_evaluation(report)
 
-    return JSONResponse(content=report.model_dump())
+    content = report.model_dump()
+    goat, stockx = platforms_data.get("goat"), platforms_data.get("stockx")
+    content["marketplace_links"] = marketplace_links(
+        sku, size, used=cond_enum != ConditionGrade.DEADSTOCK, goat_url=goat.product_url if goat else None,
+        stockx_url=stockx.product_url if stockx else None, stockx_size_key=stockx.size_key if stockx else None,
+        product_name=stockx.product_title if stockx else None,
+        product_model=stockx.product_model if stockx else None,
+    )
+    return JSONResponse(content=content)
 
 
 @app.get("/api/history")
@@ -148,7 +157,7 @@ async def stockx_sync(payload: StockXSyncPayload):
     if not market and not sales:
         raise HTTPException(400, "No bid, ask or sales found. Pick your size and open Market Data > Sales first.")
 
-    added = storage.save_stockx_sync(sku, parsed["title"], payload.url, payload.image_url, market, sales)
+    added = storage.save_stockx_sync(sku, parsed["title"], payload.url, payload.image_url, market, sales, parsed["retail_price"], parsed["model"])
     return {
         "sku": sku,
         "title": parsed["title"],

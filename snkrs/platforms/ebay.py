@@ -45,45 +45,38 @@ class EbayMarketplace(BaseMarketplace):
         # Search query matching model and size
         keywords = f"{clean_sku} size {size_us}" if clean_sku else f"{model_name} size {size_us}"
         
-        # 1. Try fetching live sold and active listings from eBay
+        # Live sold and active listings from eBay
         sold_listings = await self._scrape_ebay_sold(keywords, currency)
         active_listings = await self._scrape_ebay_active(keywords, currency)
 
         all_listings = sold_listings + active_listings
 
-        # Fallback realistic simulation if scraping returns empty (e.g. rate limit, captcha, sandboxed)
-        if not all_listings:
-            all_listings = self._generate_simulated_ebay_data(
-                clean_sku, model_name, size_us, size_eu, condition, box_condition, currency
-            )
-
-        # Extract prices
+        # Only what eBay returned: no results means no prices
         sold_prices = [l.price for l in all_listings if l.listing_type == "sold"]
         active_prices = [l.price for l in all_listings if l.listing_type == "active"]
+        lowest_ask = min(active_prices) if active_prices else None
+        last_sale = sold_prices[0] if sold_prices else None
+        reference = lowest_ask or last_sale
 
-        lowest_ask = min(active_prices) if active_prices else (min(sold_prices) if sold_prices else 100.0)
-        last_sale = sold_prices[0] if sold_prices else lowest_ask * 0.95
-        avg_price = round(sum(l.price for l in all_listings) / len(all_listings), 2) if all_listings else lowest_ask
-
-        # Dynamic fee calculation based on price tier
-        fee_pct = 8.0 if avg_price >= 150.0 else 13.25
-        net_payout = max(0.0, round(avg_price * (1 - (fee_pct / 100.0)) - self.seller_fixed_fee, 2))
+        # eBay's fee depends on the sale price: 8% at $150+, 13.25% below
+        fee_pct = 8.0 if (reference or 0) >= 150.0 else 13.25
+        net_payout = max(0.0, round(reference * (1 - fee_pct / 100.0) - self.seller_fixed_fee, 2)) if reference else None
 
         return PlatformSummary(
             platform_name="eBay",
             platform_id=self.platform_id,
-            is_live=len(sold_listings) > 0 or len(active_listings) > 0,
+            is_live=bool(all_listings),
+            data_source="live" if all_listings else "none",
             currency=currency,
             lowest_ask=lowest_ask,
-            highest_bid=None,  # eBay has Best Offer / Auctions rather than StockX bids
+            highest_bid=None,  # eBay has Best Offer / auctions, not bids
             last_sale_price=last_sale,
-            average_price=avg_price,
             sample_count=len(all_listings),
             listings=all_listings,
             seller_fee_percentage=fee_pct,
             seller_fixed_fee=self.seller_fixed_fee,
             estimated_net_payout=net_payout,
-            notes="eBay US Authenticity Guarantee applies to sneakers over $150 (8% seller fee). Under $150, fee is 13.25% + $0.30."
+            notes="eBay US: 8% seller fee at $150+ (Authenticity Guarantee), 13.25% + $0.30 below.",
         )
 
     async def _scrape_ebay_sold(self, query: str, currency: str) -> List[MarketListing]:
@@ -163,74 +156,3 @@ class EbayMarketplace(BaseMarketplace):
                 )
             )
         return parsed
-
-    def _generate_simulated_ebay_data(
-        self,
-        sku: str,
-        model_name: Optional[str],
-        size_us: float,
-        size_eu: float,
-        condition: ConditionGrade,
-        box_condition: BoxCondition,
-        currency: str
-    ) -> List[MarketListing]:
-        """Provides realistic eBay listings based on typical secondary market spread."""
-        title_base = model_name or f"Sneakers SKU {sku}"
-        
-        # Base multiplier according to condition
-        ratio = {
-            ConditionGrade.DEADSTOCK: 1.0,
-            ConditionGrade.VNDS: 0.90,
-            ConditionGrade.USED_LIKE_NEW: 0.83,
-            ConditionGrade.USED_GOOD: 0.72,
-            ConditionGrade.USED_FAIR: 0.55,
-            ConditionGrade.USED_BEAT: 0.38,
-        }.get(condition, 1.0)
-
-        box_mult = 0.88 if box_condition == BoxCondition.NO_BOX else 1.0
-        est_price = round(140.0 * ratio * box_mult, 2)
-
-        return [
-            MarketListing(
-                platform="ebay",
-                title=f"{title_base} - Size US {size_us} (Authenticity Guaranteed)",
-                price=round(est_price * 1.08, 2),
-                currency=currency,
-                size=f"US {size_us} / EU {size_eu}",
-                condition=condition.value.replace("_", " ").title(),
-                listing_type="active",
-                url=f"https://www.ebay.com/sch/i.html?_nkw={sku or model_name}",
-            ),
-            MarketListing(
-                platform="ebay",
-                title=f"{title_base} - Size US {size_us} (Best Offer / Buy It Now)",
-                price=round(est_price * 1.02, 2),
-                currency=currency,
-                size=f"US {size_us} / EU {size_eu}",
-                condition=condition.value.replace("_", " ").title(),
-                listing_type="active",
-                url=f"https://www.ebay.com/sch/i.html?_nkw={sku or model_name}",
-            ),
-            MarketListing(
-                platform="ebay",
-                title=f"[SOLD] {title_base} - US {size_us}",
-                price=round(est_price * 0.98, 2),
-                currency=currency,
-                size=f"US {size_us} / EU {size_eu}",
-                condition=condition.value.replace("_", " ").title(),
-                listing_type="sold",
-                date_sold="Yesterday",
-                url=f"https://www.ebay.com/sch/i.html?_nkw={sku or model_name}&LH_Sold=1",
-            ),
-            MarketListing(
-                platform="ebay",
-                title=f"[SOLD] {title_base} - Verified Sale",
-                price=round(est_price * 0.94, 2),
-                currency=currency,
-                size=f"US {size_us} / EU {size_eu}",
-                condition=condition.value.replace("_", " ").title(),
-                listing_type="sold",
-                date_sold="3 days ago",
-                url=f"https://www.ebay.com/sch/i.html?_nkw={sku or model_name}&LH_Sold=1",
-            ),
-        ]

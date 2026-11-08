@@ -7,6 +7,7 @@ from typing import Any, Dict, List
 from .models import BoxCondition, ConditionGrade
 from .platforms.stockx import StockXMarketplace
 from .size_converter import SizeConverter
+from .marketplace_links import stockx_product_link
 from .stockx_history import summarize_sales
 from .storage import SneakerStorage
 
@@ -34,7 +35,8 @@ def value_item(item: Dict[str, Any], storage: SneakerStorage, stockx: StockXMark
         "favorite": bool(item.get("favorite")),
         "title": product.get("title") or item["model_name"],
         "image_url": product.get("image_url"),
-        "stockx_url": product.get("url") or f"https://stockx.com/search?s={item['sku']}",
+        "stockx_url": stockx_product_link(product.get("url"), key, item["size"]) or f"https://stockx.com/search?s={item['sku']}",
+        "retail_price": product.get("retail_price"),
         "synced": bool(market or sales),
         "synced_at": market["synced_at"] if market else None,
         "stockx_eligible": eligible,

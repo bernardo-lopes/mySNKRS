@@ -55,7 +55,7 @@ class SneakerValuationEngine:
         stockx_ref_price: Optional[float] = None
         brand = "Sneakers"
         resolved_name = model_name or f"Sneaker {clean_sku}"
-        retail_price = 130.0
+        retail_price = None  # only from a StockX sync
         image_url = None
 
         if stockx and (stockx.lowest_ask or stockx.last_sale_price):
@@ -64,7 +64,6 @@ class SneakerValuationEngine:
             stockx_ref_price = CATALOG_BENCHMARKS[clean_sku]["base_stockx_ds"]
             resolved_name = CATALOG_BENCHMARKS[clean_sku]["title"]
             brand = CATALOG_BENCHMARKS[clean_sku]["brand"]
-            retail_price = CATALOG_BENCHMARKS[clean_sku]["retail_price"]
             image_url = CATALOG_BENCHMARKS[clean_sku].get("image_url")
         else:
             stockx_ref_price = 140.0
@@ -73,13 +72,11 @@ class SneakerValuationEngine:
         if clean_sku in CATALOG_BENCHMARKS:
             resolved_name = CATALOG_BENCHMARKS[clean_sku]["title"]
             brand = CATALOG_BENCHMARKS[clean_sku]["brand"]
-            retail_price = CATALOG_BENCHMARKS[clean_sku]["retail_price"]
             image_url = CATALOG_BENCHMARKS[clean_sku].get("image_url")
         elif "LANEY" in clean_sku or ("LANEY" in (model_name or "").upper()):
             item = CATALOG_BENCHMARKS["FD2596-700"]
             resolved_name = item["title"]
             brand = item["brand"]
-            retail_price = item["retail_price"]
             image_url = item.get("image_url")
 
         # Synced StockX data has the exact product name and photo
@@ -87,6 +84,8 @@ class SneakerValuationEngine:
             resolved_name = stockx.product_title
         if stockx and stockx.image_url:
             image_url = stockx.image_url
+        if stockx and stockx.retail_price:
+            retail_price = stockx.retail_price
 
         # 2. Multipliers
         cond_mult = cls.CONDITION_MULTIPLIERS.get(condition, 1.00)
@@ -131,11 +130,12 @@ class SneakerValuationEngine:
         # 5. Net Profit Analysis per platform
         # Calculate take-home payout for each platform at fair market price
         # StockX computes its own payout from the highest bid
+        # Only marketplaces with a real price get a payout
         for pid, pdata in platforms_data.items():
             if pdata and pid != "stockx":
-                gross = pdata.lowest_ask or fair_market_price
-                fee = (gross * (pdata.seller_fee_percentage / 100.0)) + pdata.seller_fixed_fee
-                pdata.estimated_net_payout = max(0.0, round(gross - fee, 2))
+                gross = pdata.lowest_ask
+                fee = (gross * (pdata.seller_fee_percentage / 100.0)) + pdata.seller_fixed_fee if gross else 0
+                pdata.estimated_net_payout = max(0.0, round(gross - fee, 2)) if gross else None
 
         # Determine Best Platform to Sell
         best_platform, best_reason = cls._determine_best_platform(

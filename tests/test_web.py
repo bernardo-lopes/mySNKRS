@@ -25,7 +25,23 @@ def test_api_popular(client):
     assert "DZ5485-612" in data
 
 
-def test_api_evaluate(client):
+def test_api_evaluate(client, monkeypatch):
+    # Marketplaces return nothing (as when a site blocks the app); stub their network lookups
+    from snkrs.platforms.ebay import EbayMarketplace
+    from snkrs.platforms.goat import GoatMarketplace
+    from snkrs.platforms.vinted import VintedMarketplace
+
+    async def nothing(*args, **kwargs):
+        return None
+
+    async def no_listings(*args, **kwargs):
+        return []
+
+    monkeypatch.setattr(GoatMarketplace, "_attempt_live_goat_search", nothing)
+    monkeypatch.setattr(EbayMarketplace, "_scrape_ebay_sold", no_listings)
+    monkeypatch.setattr(EbayMarketplace, "_scrape_ebay_active", no_listings)
+    monkeypatch.setattr(VintedMarketplace, "_attempt_vinted_scrape", no_listings)
+
     payload = {
         "sku": "DD1391-100",
         "size": "EU 44",
@@ -36,7 +52,10 @@ def test_api_evaluate(client):
     assert response.status_code == 200
     data = response.json()
     assert data["sku"] == "DD1391-100"
-    assert data["fair_market_price"] > 0
+    # No live data from GOAT, eBay or Vinted in tests: nothing is made up
+    for pid in ("goat", "ebay", "vinted"):
+        p = data["platforms"][pid]
+        assert (p["lowest_ask"], p["highest_bid"], p["last_sale_price"], p["estimated_net_payout"]) == (None, None, None, None)
     assert "platforms" in data
     assert "stockx" in data["platforms"]
     assert "vinted" in data["platforms"]

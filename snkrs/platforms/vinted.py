@@ -56,37 +56,27 @@ class VintedMarketplace(BaseMarketplace):
         clean_sku = sku.strip().upper()
         search_term = f"{clean_sku} {int(size_eu)}" if clean_sku else f"{model_name} {int(size_eu)}"
         
-        # 1. Attempt live API query to Vinted
         listings = await self._attempt_vinted_scrape(search_term, condition, currency)
 
-        # Fallback simulation if network/cookie block occurs
-        if not listings:
-            listings = self._generate_simulated_vinted_data(
-                clean_sku, model_name, size_us, size_eu, condition, box_condition, currency
-            )
-
+        # Only what Vinted returned: no results means no prices
         prices = [l.price for l in listings]
-        lowest_ask = min(prices) if prices else 85.0
-        avg_price = round(sum(prices) / len(prices), 2) if prices else lowest_ask
-
-        # 0% seller fee! Seller keeps 100% of gross!
-        net_payout = self.calculate_net_payout(lowest_ask)
+        lowest_ask = min(prices) if prices else None
 
         return PlatformSummary(
             platform_name="Vinted",
             platform_id=self.platform_id,
-            is_live=len(listings) > 0,
+            is_live=bool(listings),
+            data_source="live" if listings else "none",
             currency=currency,
             lowest_ask=lowest_ask,
             highest_bid=None,  # Vinted uses direct offers / chat
-            last_sale_price=round(lowest_ask * 0.95, 2),
-            average_price=avg_price,
+            last_sale_price=None,  # Vinted doesn't publish sold prices
             sample_count=len(listings),
             listings=listings,
             seller_fee_percentage=0.0,
             seller_fixed_fee=0.0,
-            estimated_net_payout=net_payout,
-            notes="0% SELLER FEES! You keep 100% of your selling price (buyer pays protection + shipping)."
+            estimated_net_payout=self.calculate_net_payout(lowest_ask) if lowest_ask else None,
+            notes="0% seller fees: you keep your full selling price (the buyer pays protection and shipping).",
         )
 
     async def _attempt_vinted_scrape(
@@ -135,62 +125,3 @@ class VintedMarketplace(BaseMarketplace):
         except Exception as e:
             logger.debug(f"Vinted API query: {e}")
         return results[:4]
-
-    def _generate_simulated_vinted_data(
-        self,
-        sku: str,
-        model_name: Optional[str],
-        size_us: float,
-        size_eu: float,
-        condition: ConditionGrade,
-        box_condition: BoxCondition,
-        currency: str
-    ) -> List[MarketListing]:
-        title_base = model_name or f"Sneaker {sku}"
-        
-        # Vinted pricing is often slightly competitive / street level
-        condition_factors = {
-            ConditionGrade.DEADSTOCK: 0.96,
-            ConditionGrade.VNDS: 0.85,
-            ConditionGrade.USED_LIKE_NEW: 0.77,
-            ConditionGrade.USED_GOOD: 0.67,
-            ConditionGrade.USED_FAIR: 0.48,
-            ConditionGrade.USED_BEAT: 0.32,
-        }
-        factor = condition_factors.get(condition, 0.75)
-        box_factor = 0.88 if box_condition == BoxCondition.NO_BOX else 1.0
-
-        base_val = 135.0 * factor * box_factor
-
-        return [
-            MarketListing(
-                platform="vinted",
-                title=f"{title_base} - EU {int(size_eu)}",
-                price=round(base_val * 0.95, 2),
-                currency=currency,
-                size=f"EU {int(size_eu)}",
-                condition=condition.value.replace("_", " ").title(),
-                listing_type="active",
-                url=f"https://www.vinted.com/catalog?search_text={sku or model_name}",
-            ),
-            MarketListing(
-                platform="vinted",
-                title=f"{title_base} ({box_condition.value.replace('_', ' ').title()})",
-                price=round(base_val * 1.05, 2),
-                currency=currency,
-                size=f"EU {int(size_eu)}",
-                condition=condition.value.replace("_", " ").title(),
-                listing_type="active",
-                url=f"https://www.vinted.com/catalog?search_text={sku or model_name}",
-            ),
-            MarketListing(
-                platform="vinted",
-                title=f"{title_base} - Quick Seller",
-                price=round(base_val * 0.90, 2),
-                currency=currency,
-                size=f"EU {int(size_eu)}",
-                condition=condition.value.replace("_", " ").title(),
-                listing_type="active",
-                url=f"https://www.vinted.com/catalog?search_text={sku or model_name}",
-            ),
-        ]

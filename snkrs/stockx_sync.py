@@ -7,7 +7,7 @@ own browser).
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 _PRICE = r"\$\s?([\d,]+(?:\.\d+)?)"
 
@@ -18,6 +18,7 @@ _ROW_PRICE = re.compile(r"^(?:" + _PRICE + r"|--)$")
 _ROW_TIME = re.compile(r"^(\d{1,2}):(\d{2})\s?([AP]M)$")
 
 _BID_PATTERNS = [r"Sell Now for\s*" + _PRICE, r"Highest Bid\s*" + _PRICE, _PRICE + r"\s*Sell Now"]
+_RETAIL_PATTERNS = [r"Retail Price\s*" + _PRICE]
 _ASK_PATTERNS = [r"Buy Now for\s*" + _PRICE, r"Standard Lowest Ask\s*" + _PRICE, r"Lowest Ask\s*" + _PRICE]
 
 
@@ -83,8 +84,18 @@ def _parse_sales_panel(lines: List[str]) -> List[Dict[str, Any]]:
     return sales
 
 
+def _model_and_colorway(lines: List[str], product_title: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+    """The product heading is two lines that together make the page title: model, then colorway."""
+    if not product_title:
+        return None, None
+    for a, b in zip(lines, lines[1:]):
+        if product_title.startswith(f"{a} {b}") and len(a) < len(product_title):
+            return a, b
+    return None, None
+
+
 def parse_stockx_page(text: str, title: Optional[str] = None) -> Dict[str, Any]:
-    """Extracts SKU, product title, size, highest bid, lowest ask and sales from StockX page text."""
+    """Extracts SKU, product title, size, highest bid, lowest ask, retail price and sales from StockX page text."""
     lines = [l.strip() for l in text.splitlines() if l.strip()]
     sales = _parse_sales_panel(lines)
 
@@ -102,11 +113,16 @@ def parse_stockx_page(text: str, title: Optional[str] = None) -> Dict[str, Any]:
     m = re.search(r"Size:\s*\n?\s*([^\n]+)", text)
     page_size = m.group(1).strip() if m else (sales[0]["size"] if sales else None)
 
+    model, colorway = _model_and_colorway(lines, product_title)
+
     return {
         "sku": sku,
         "title": product_title,
+        "model": model,
+        "colorway": colorway,
         "size": page_size,
         "highest_bid": _first(_BID_PATTERNS, text),
         "lowest_ask": _first(_ASK_PATTERNS, text),
+        "retail_price": _first(_RETAIL_PATTERNS, text),
         "sales": sales,
     }

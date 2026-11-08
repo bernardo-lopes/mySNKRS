@@ -1,0 +1,10 @@
+<resources>
+    <!-- Compose draws everything; this only sets the window background before the first frame -->
+    <style name="Theme.MySnkrs" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/splash</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+    <color name="splash">#0B0C10</color>
+    <color name="ic_launcher_background">#0B0C10</color>
+</resources>

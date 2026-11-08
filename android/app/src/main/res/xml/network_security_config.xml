@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app talks to your own mySNKRS server on your Mac. With `tailscale serve` that is HTTPS;
+     a plain http://100.x.y.z:8000 Tailscale or Wi-Fi address also works, so cleartext is allowed.
+     Tailscale encrypts the traffic between your devices either way. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

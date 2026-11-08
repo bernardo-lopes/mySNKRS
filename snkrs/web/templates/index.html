@@ -66,16 +66,27 @@
         <div id="resultsSection" class="hidden space-y-6">
 
             <!-- Product -->
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-3">
                 <div class="w-16 h-16 rounded-xl thumb flex items-center justify-center overflow-hidden flex-shrink-0">
                     <img id="sneakerImg" alt="" class="w-full h-full object-contain hidden">
                     <span id="sneakerImgFallback" class="text-2xl">👟</span>
                 </div>
-                <div class="min-w-0 flex-1">
+                <div class="min-w-0 flex-1 basis-48">
                     <h1 id="sneakerTitle" class="text-lg font-semibold text-white truncate"></h1>
                     <div id="sneakerMeta" class="text-sm text-gray-400 font-mono"></div>
+                    <!-- Condition and box of your pair, shown when it's in your inventory -->
+                    <div id="ownedTags" class="hidden mt-1.5 flex flex-wrap gap-1"></div>
+                    <!-- One-line note, shown when this pair is in your inventory -->
+                    <button id="noteBtn" type="button" class="hidden mt-1 block max-w-full truncate text-left text-xs text-gray-300 hover:text-white"></button>
+                    <input id="noteInput" maxlength="140" placeholder="One-line note, Enter to save, Esc to cancel" aria-label="Note"
+                           class="hidden mt-1 w-full max-w-md text-xs px-2 py-1 rounded-md bg-ink-900 border border-gray-500 text-white outline-none">
                 </div>
-                <a id="addToInventory" href="/inventory" class="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg border border-ink-600 text-gray-200 hover:bg-ink-700">+ Add to inventory</a>
+                <div class="flex-shrink-0 flex items-center gap-2 ml-auto">
+                    <!-- Shown when this pair is in your inventory -->
+                    <button id="favToggle" type="button" class="hidden text-xs px-3 py-1.5 rounded-lg border border-ink-600 text-gray-200 hover:bg-ink-700"></button>
+                    <a id="inInventory" href="/inventory" class="hidden text-xs px-3 py-1.5 rounded-lg bg-ink-700 text-gray-200 hover:bg-ink-600">✓ In inventory</a>
+                    <a id="addToInventory" href="/inventory" class="hidden text-xs px-3 py-1.5 rounded-lg border border-ink-600 text-gray-200 hover:bg-ink-700">+ Add to inventory</a>
+                </div>
             </div>
 
             <!-- StockX -->
@@ -159,22 +170,25 @@
                 </div>
             </section>
 
-            <!-- Estimate & other marketplaces -->
+            <!-- Other marketplaces -->
             <section class="bg-ink-800 border border-ink-700 rounded-2xl p-5 space-y-4">
-                <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <h2 class="text-base font-semibold text-white">Estimate for your condition</h2>
-                    <div class="text-sm text-gray-400">Quick <span id="quickSalePrice" class="text-white tnum"></span> · Fair <span id="fairMarketPrice" class="text-white font-semibold tnum"></span> · Patient <span id="patientSalePrice" class="text-white tnum"></span></div>
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="text-base font-semibold text-white">Other marketplaces</h2>
+                    <!-- What the Open links search for -->
+                    <div class="flex flex-wrap gap-2 text-xs">
+                        <div id="mktSize" class="flex gap-1">
+                            <button type="button" class="pill" data-size="1"></button>
+                            <button type="button" class="pill" data-size="0">All sizes</button>
+                        </div>
+                        <div id="mktBy" class="flex gap-1">
+                            <button type="button" class="pill" data-by="code">Style code</button>
+                            <button type="button" class="pill" data-by="name">Full name</button>
+                            <button type="button" class="pill" data-by="model">Model</button>
+                        </div>
+                    </div>
                 </div>
-                <p class="text-sm text-gray-400"><span class="text-white">Best place to sell: <span id="bestPlatformTitle"></span>.</span> <span id="bestPlatformReason"></span></p>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm tnum">
-                        <thead class="text-xs text-gray-400 border-b border-ink-700">
-                            <tr><th class="text-left font-medium py-2">Marketplace</th><th class="text-left font-medium">Lowest ask</th><th class="text-left font-medium">Bid / sold</th><th class="text-left font-medium">Seller fee</th><th class="text-right font-medium">Net payout</th></tr>
-                        </thead>
-                        <tbody id="platformsTableBody" class="divide-y divide-ink-700"></tbody>
-                    </table>
-                </div>
-                <p class="text-xs text-gray-500">GOAT, eBay and Vinted figures are estimates.</p>
+                <div id="platformsList" class="divide-y divide-ink-700 border-y border-ink-700"></div>
+                <p class="text-xs text-gray-500">Open searches StockX Used, GOAT, eBay or Vinted for this pair. Not every seller lists the style code or the full name: Model searches just the model ("Nike Ghoswift"), which finds the most listings, so check the colorway. Switch to All sizes when your size has no results. StockX Used is StockX's second-hand Listings, where sellers pay no fees for now (a launch offer); its search is loose, so check the pair. GOAT can only open on your size from its product page. Prices only show when the app found real listings.</p>
             </section>
         </div>
 
@@ -209,6 +223,7 @@
                 renderResults(data);
                 $('resultsSection').classList.remove('hidden');
                 history.replaceState(null, '', `/?sku=${encodeURIComponent(data.sku)}&size=${encodeURIComponent($('sizeInput').value)}`);
+                showOwnership(data.sku, $('sizeInput').value);
             } catch (err) {
                 alert('Could not check value: ' + err.message);
             } finally {
@@ -219,7 +234,7 @@
         function renderResults(data) {
             const sx = data.platforms.stockx || {};
             $('sneakerTitle').textContent = data.model_name;
-            $('sneakerMeta').textContent = `${data.sku} · ${sx.size_label || $('sizeInput').value}`;
+            $('sneakerMeta').textContent = `${data.sku} · ${sx.size_label || $('sizeInput').value}` + (data.retail_price ? ` · Retail ${usd(data.retail_price)}` : '');
             const form = $('valuationForm').elements;
             $('addToInventory').href = '/inventory?' + new URLSearchParams({
                 add: 1, sku: data.sku, model_name: data.model_name, size: form.size.value,
@@ -228,7 +243,7 @@
             const img = $('sneakerImg');
             if (data.image_url) { img.src = data.image_url; img.classList.remove('hidden'); $('sneakerImgFallback').classList.add('hidden'); }
             else { img.classList.add('hidden'); $('sneakerImgFallback').classList.remove('hidden'); }
-            $('stockxLink').href = sx.product_url || `https://stockx.com/search?s=${encodeURIComponent(data.sku)}`;
+            $('stockxLink').href = (data.marketplace_links?.stockx || {}).url || sx.product_url || `https://stockx.com/search?s=${encodeURIComponent(data.sku)}`;
 
             renderStockX(data.sku, sx);
             renderOthers(data);
@@ -316,36 +331,145 @@
             </svg>`;
         }
 
-        function renderOthers(data) {
-            $('quickSalePrice').textContent = usd(data.quick_sale_price);
-            $('fairMarketPrice').textContent = usd(data.fair_market_price);
-            $('patientSalePrice').textContent = usd(data.patient_sale_price);
-            $('bestPlatformTitle').textContent = data.best_platform_to_sell;
-            $('bestPlatformReason').textContent = data.best_platform_reason;
+        // Which search the Open links use: your size or all sizes, by style code or by name
+        const mkt = { size: true, by: 'code', data: null };
 
-            const links = {
-                goat: `https://www.goat.com/search?query=${encodeURIComponent(data.sku)}`,
-                ebay: `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(data.sku)}&LH_BIN=1`,
-                vinted: `https://www.vinted.com/catalog?search_text=${encodeURIComponent(data.sku)}`,
-            };
-            $('platformsTableBody').innerHTML = Object.entries(data.platforms)
-                .filter(([pid, p]) => pid !== 'stockx' && p)
+        function pickLink(l, size, by) {
+            const opts = l.options || [];
+            return opts.find(o => o.by === by && !!o.size_label === size)
+                || opts.find(o => o.by === by)  // e.g. GOAT search has no size filter
+                || opts[0] || { url: l.url };
+        }
+
+        function renderOthers(data) {
+            mkt.data = data;
+            const links = data.marketplace_links || {};
+            const anyOpt = (pred) => Object.values(links).some(l => (l.options || []).some(pred));
+            const sizeLabel = (Object.values(links).flatMap(l => l.options || []).find(o => o.size_label) || {}).size_label;
+            $('mktSize').classList.toggle('hidden', !sizeLabel);
+            $('mktSize').querySelector('[data-size="1"]').textContent = sizeLabel || '';
+            for (const by of ['name', 'model']) $('mktBy').querySelector(`[data-by="${by}"]`).classList.toggle('hidden', !anyOpt(o => o.by === by));
+            // A pair without a known size or name falls back for now, without changing your choice
+            const size = mkt.size && !!sizeLabel;
+            const by = anyOpt(o => o.by === mkt.by) ? mkt.by : 'code';
+            document.querySelectorAll('#mktSize .pill').forEach(b => b.classList.toggle('active', (b.dataset.size === '1') === size));
+            document.querySelectorAll('#mktBy .pill').forEach(b => b.classList.toggle('active', b.dataset.by === by));
+
+            // StockX Used (its second-hand Listings) has no data in the app; sellers pay no fees there for now
+            const others = { stockx_used: { platform_name: 'StockX Used', fee_label: '0% fee', fee_note: 'Launch offer' }, ...data.platforms };
+            $('platformsList').innerHTML = Object.entries(others)
+                .filter(([pid, p]) => pid !== 'stockx' && p && links[pid])
                 .map(([pid, p]) => {
-                    const fee = p.seller_fee_percentage > 0 ? `${p.seller_fee_percentage}% + ${usd(p.seller_fixed_fee)}` : '0%';
-                    const bid = p.highest_bid ? `Bid ${usd(p.highest_bid)}` : (p.last_sale_price ? `Sold ${usd(p.last_sale_price)}` : '–');
-                    return `<tr>
-                        <td class="py-2"><a href="${links[pid] || '#'}" target="_blank" rel="noopener noreferrer" class="text-white hover:underline">${esc(p.platform_name)}</a></td>
-                        <td>${usd(p.lowest_ask)}</td><td class="text-gray-400">${bid}</td><td class="text-gray-400">${fee}</td>
-                        <td class="text-right text-white font-semibold">${usd(p.estimated_net_payout)}</td>
-                    </tr>`;
+                    const fee = p.fee_label || (p.seller_fee_percentage > 0 ? `${p.seller_fee_percentage}% + ${usd(p.seller_fixed_fee)} fee` : '0% fee');
+                    const link = pickLink(links[pid], size, by);
+                    const allSizesOnly = size && !link.size_label;
+                    const price = p.lowest_ask != null
+                        ? `<div class="text-right"><div class="text-white font-semibold">${usd(p.lowest_ask)}</div>${p.estimated_net_payout != null ? `<div class="text-[11px] text-gray-500">${usd(p.estimated_net_payout)} net</div>` : ''}</div>`
+                        : '';
+                    return `<div class="flex items-center gap-3 py-3">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm text-white">${esc(p.platform_name)}</div>
+                            <div class="text-xs text-gray-500">${fee}${p.fee_note ? ' · ' + p.fee_note : ''}${allSizesOnly ? ' · shows all sizes' : ''}</div>
+                        </div>
+                        ${price}
+                        <a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer"
+                           class="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg border border-ink-600 text-gray-200 hover:bg-ink-700">Open ↗</a>
+                    </div>`;
                 }).join('');
         }
 
-        // Prefill from URL (e.g. after a sync)
+        document.querySelectorAll('#mktSize .pill').forEach(b => b.addEventListener('click', () => { mkt.size = b.dataset.size === '1'; renderOthers(mkt.data); }));
+        document.querySelectorAll('#mktBy .pill').forEach(b => b.addEventListener('click', () => { mkt.by = b.dataset.by; renderOthers(mkt.data); }));
+
+        // If this pair is in your inventory, show that (with a favorite star) instead of "Add to inventory".
+        // Opening a pair from the inventory passes its id; otherwise match on style code and size.
+        let openedItemId = null, ownedItem = null;
+        // Same tags as the inventory list
+        const COND = { deadstock: ['DS', 'bg-emerald-500/15 text-emerald-300'], vnds: ['Not DS', 'bg-amber-500/15 text-amber-300'] };
+        const condChip = (c) => { const [t, cls] = COND[c] || ['Used', 'bg-rose-500/15 text-rose-300']; return `<span class="chip ${cls}">${t}</span>`; };
+        const BOX = { original_damaged: 'Damaged box', replacement: 'Not original box', no_box: 'No box' };
+        // "US M 10", "US 10" and "10" are the same size; women's sizes keep their W
+        const sizeKey = (v) => String(v).toUpperCase().replace(/\s+/g, '').replace(/^US/, '').replace(/^M(?=\d)/, '');
+        const sameSize = (a, b) => sizeKey(a) === sizeKey(b);
+
+        async function showOwnership(sku, size) {
+            const [forSale, sold] = await Promise.all(['for_sale', 'sold'].map(s => fetch('/api/inventory?status=' + s).then(r => r.json())));
+            const items = [...forSale.items, ...sold.items];
+            ownedItem = items.find(i => String(i.id) === openedItemId && i.sku === sku.toUpperCase() && sameSize(i.size, size))
+                || forSale.items.find(i => i.sku === sku.toUpperCase() && sameSize(i.size, size))
+                || null;
+            const owned = !!ownedItem;
+            $('addToInventory').classList.toggle('hidden', owned);
+            $('inInventory').classList.toggle('hidden', !owned);
+            $('favToggle').classList.toggle('hidden', !owned);
+            $('noteBtn').classList.toggle('hidden', !owned);
+            $('ownedTags').classList.toggle('hidden', !owned);
+            $('noteInput').classList.add('hidden');
+            if (!owned) return;
+            renderNote();
+            $('ownedTags').innerHTML = condChip(ownedItem.condition)
+                + (BOX[ownedItem.box_condition] ? `<span class="chip bg-ink-700 text-gray-300">${BOX[ownedItem.box_condition]}</span>` : '');
+            $('inInventory').textContent = ownedItem.status === 'sold' ? '✓ Sold' : '✓ In inventory';
+            $('inInventory').href = '/inventory?' + new URLSearchParams({ q: ownedItem.sku });
+            renderFav();
+        }
+
+        function renderFav() {
+            const on = ownedItem.favorite;
+            $('favToggle').innerHTML = on ? '<span style="color:#F5B301">★</span> Favorite' : '☆ Favorite';
+            $('favToggle').title = on ? 'Remove from favorites' : 'Mark as favorite';
+            $('favToggle').setAttribute('aria-pressed', on);
+        }
+
+        function renderNote() {
+            const note = ownedItem.notes || '';
+            $('noteBtn').textContent = note ? '✎ ' + note : '+ Add note';
+            $('noteBtn').title = note ? note + ' (click to edit)' : 'Add a one-line note to this pair';
+            $('noteBtn').classList.toggle('text-gray-500', !note);
+        }
+
+        $('noteBtn').addEventListener('click', () => {
+            $('noteBtn').classList.add('hidden');
+            const input = $('noteInput');
+            input.value = ownedItem.notes || '';
+            input.classList.remove('hidden');
+            input.focus(); input.select();
+        });
+
+        async function finishNote(save) {
+            const input = $('noteInput');
+            if (input.classList.contains('hidden')) return;
+            input.classList.add('hidden');
+            const notes = input.value.trim();
+            if (save && notes !== (ownedItem.notes || '')) {
+                const res = await fetch('/api/inventory/' + ownedItem.id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ notes }) });
+                if (res.ok) ownedItem.notes = notes;
+            }
+            renderNote();
+            $('noteBtn').classList.remove('hidden');
+        }
+        $('noteInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') finishNote(true);
+            if (e.key === 'Escape') finishNote(false);
+        });
+        $('noteInput').addEventListener('blur', () => finishNote(true));
+
+        $('favToggle').addEventListener('click', async () => {
+            if (!ownedItem) return;
+            const favorite = !ownedItem.favorite;
+            const res = await fetch('/api/inventory/' + ownedItem.id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ favorite }) });
+            if (res.ok) { ownedItem.favorite = favorite; renderFav(); }
+        });
+
+        // Prefill from URL (e.g. after a sync, or opening a pair from the inventory)
         const params = new URLSearchParams(location.search);
         if (params.get('sku')) {
             $('skuInput').value = params.get('sku');
             if (params.get('size')) $('sizeInput').value = params.get('size');
+            const form = $('valuationForm').elements;
+            if (params.get('condition')) form.condition.value = params.get('condition');
+            if (params.get('box_condition')) form.box_condition.value = params.get('box_condition');
+            openedItemId = params.get('item');
             $('valuationForm').requestSubmit();
         }
     </script>

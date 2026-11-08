@@ -218,6 +218,8 @@ class StockXMarketplace(BaseMarketplace):
             product_title=product.get("title"),
             image_url=product.get("image_url"),
             product_url=product.get("url") or f"https://stockx.com/search?s={clean_sku}",
+            retail_price=product.get("retail_price"),
+            product_model=product.get("model"),
             size_key=key,
         )
 

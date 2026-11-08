@@ -94,6 +94,11 @@ class SneakerStorage:
             inventory_cols = {r[1] for r in conn.execute("PRAGMA table_info(inventory)")}
             if "favorite" not in inventory_cols:
                 conn.execute("ALTER TABLE inventory ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
+            product_cols = {r[1] for r in conn.execute("PRAGMA table_info(stockx_products)")}
+            if "retail_price" not in product_cols:
+                conn.execute("ALTER TABLE stockx_products ADD COLUMN retail_price REAL")
+            if "model" not in product_cols:
+                conn.execute("ALTER TABLE stockx_products ADD COLUMN model TEXT")
             conn.commit()
 
     def save_evaluation(self, report: ValuationReport) -> int:
@@ -202,20 +207,24 @@ class SneakerStorage:
         image_url: Optional[str],
         market: Optional[Dict[str, Any]],
         sales: List[Dict[str, Any]],
+        retail_price: Optional[float] = None,
+        model: Optional[str] = None,
     ) -> int:
         """Stores a StockX sync. Sales are merged (deduplicated), so history accumulates across syncs.
         Returns the number of new sales added."""
         sku = sku.strip().upper()
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
-                INSERT INTO stockx_products (sku, title, url, image_url, updated_at)
-                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                INSERT INTO stockx_products (sku, title, url, image_url, retail_price, model, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(sku) DO UPDATE SET
                     title = COALESCE(excluded.title, title),
                     url = COALESCE(excluded.url, url),
                     image_url = COALESCE(excluded.image_url, image_url),
+                    retail_price = COALESCE(excluded.retail_price, retail_price),
+                    model = COALESCE(excluded.model, model),
                     updated_at = CURRENT_TIMESTAMP
-            """, (sku, title, url, image_url))
+            """, (sku, title, url, image_url, retail_price, model))
             if market:
                 conn.execute("""
                     INSERT OR REPLACE INTO stockx_market (sku, size_key, size_label, highest_bid, lowest_ask, synced_at)
